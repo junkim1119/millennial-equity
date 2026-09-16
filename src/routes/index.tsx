@@ -135,59 +135,51 @@ const DIY_PROJECTS = [
 
 const MAPS_KEY = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY'] as string | undefined;
 
-function streetViewUrl(l: Listing) {
+/** Interactive Google Street View of the home's exterior (Maps Embed API). */
+function streetViewEmbedUrl(l: Listing) {
   if (!MAPS_KEY) return null;
-  return `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${l.lat},${l.lng}&fov=80&pitch=8&source=outdoor&return_error_code=true&key=${MAPS_KEY}`;
+  return `https://www.google.com/maps/embed/v1/streetview?key=${MAPS_KEY}&location=${l.lat},${l.lng}&heading=0&pitch=5&fov=80`;
 }
 
-function staticMapUrl(l: Listing) {
+/** Mini-map centered on the verified location (Maps Embed API). */
+function mapEmbedUrl(l: Listing) {
   if (!MAPS_KEY) return null;
-  return `https://maps.googleapis.com/maps/api/staticmap?center=${l.lat},${l.lng}&zoom=15&size=600x180&scale=2&markers=color:red%7C${l.lat},${l.lng}&key=${MAPS_KEY}`;
+  return `https://www.google.com/maps/embed/v1/place?key=${MAPS_KEY}&q=${encodeURIComponent(`${l.address}, ${l.city} ${l.zip}`)}&zoom=15`;
 }
 
 function googleMapsLink(l: Listing) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${l.address}, ${l.city} ${l.zip}`)}`;
 }
 
-/** True once Street View imagery is confirmed for this location. */
-function useStreetView(l: Listing) {
-  const [available, setAvailable] = useState(false);
-  useEffect(() => {
-    if (!MAPS_KEY) return;
-    let active = true;
-    fetch(`https://maps.googleapis.com/maps/api/streetview/metadata?location=${l.lat},${l.lng}&source=outdoor&key=${MAPS_KEY}`)
-      .then((r) => r.json())
-      .then((d: { status?: string }) => {
-        if (active && d?.status === "OK") setAvailable(true);
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [l.lat, l.lng]);
-  return available;
-}
-
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
-  const hasStreetView = useStreetView(l);
-  const [streetViewFailed, setStreetViewFailed] = useState(false);
+  const [media, setMedia] = useState<"photo" | "street">("photo");
   const [showMap, setShowMap] = useState(false);
-  const sv = streetViewUrl(l);
-  const useSv = Boolean(sv) && hasStreetView && !streetViewFailed;
-  const mapUrl = staticMapUrl(l);
+  const streetUrl = streetViewEmbedUrl(l);
+  const mapUrl = mapEmbedUrl(l);
+  const showStreet = media === "street" && streetUrl;
 
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img
-          src={useSv && sv ? sv : l.image}
-          alt={useSv ? `Street-level view of ${l.address}, ${l.city}` : `Home at ${l.address}, ${l.city}`}
-          loading="lazy"
-          width={1024}
-          height={768}
-          onError={() => setStreetViewFailed(true)}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {showStreet ? (
+          <iframe
+            src={streetUrl}
+            title={`Street View of ${l.address}, ${l.city}`}
+            loading="lazy"
+            className="h-full w-full border-0"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        ) : (
+          <img
+            src={l.image}
+            alt={`Home at ${l.address}, ${l.city}`}
+            loading="lazy"
+            width={1024}
+            height={768}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        )}
         {l.tag && (
           <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
             {l.tag}
@@ -196,9 +188,16 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
         <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground">
           {l.daysOnMarket}d on market
         </span>
-        <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          {useSv ? "Street View photo" : "Listing photo"}
-        </span>
+        {streetUrl && (
+          <button
+            type="button"
+            onClick={() => setMedia(showStreet ? "photo" : "street")}
+            className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm hover:bg-background"
+          >
+            <MapIcon className="h-3.5 w-3.5" />
+            {showStreet ? "Listing photo" : "Street View"}
+          </button>
+        )}
       </div>
       <div className="p-4">
         <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
