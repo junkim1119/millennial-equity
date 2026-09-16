@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator } from "lucide-react";
+import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator, Home, Hammer, Wrench, PaintRoller } from "lucide-react";
 
 import listing1 from "../assets/listing-1.jpg";
 import listing2 from "../assets/listing-2.jpg";
@@ -80,10 +80,10 @@ function milesBetween(a: { lat: number; lng: number }, b: { lat: number; lng: nu
 const PRICE_MIN = 0;
 const PRICE_MAX = 2000000;
 
-type MortgageSettings = { rate: number; downPct: number; termYears: number };
+type MortgageSettings = { rate: number; downPct: number; termYears: number; rentalIncome: number };
 
 function formatPrice(n: number) {
-  return "$" + n.toLocaleString("en-US");
+  return "$" + Math.round(n).toLocaleString("en-US");
 }
 
 function monthlyPayment(price: number, { rate, downPct, termYears }: MortgageSettings) {
@@ -94,6 +94,41 @@ function monthlyPayment(price: number, { rate, downPct, termYears }: MortgageSet
   if (r === 0) return principal / n;
   return (principal * r) / (1 - Math.pow(1 + r, -n));
 }
+
+// House-hacking: rentable spaces a young buyer could lease out
+const RENTAL_SPACES = [
+  { id: "bedroom", label: "Spare bedroom", detail: "Roommate or long-term tenant", rent: 900 },
+  { id: "basement", label: "Finished basement", detail: "Separate entrance studio", rent: 1500 },
+  { id: "adu", label: "ADU / garage unit", detail: "Standalone 1-bed unit", rent: 1900 },
+] as const;
+
+type RentalId = (typeof RENTAL_SPACES)[number]["id"];
+
+// Renovation cost estimator data
+const RENO_ROOMS = [
+  { id: "kitchen", label: "Outdated kitchen", material: 14500, labor: 12000 },
+  { id: "bath", label: "Full bath", material: 6200, labor: 5400 },
+  { id: "living", label: "Living room", material: 4300, labor: 3100 },
+  { id: "primary", label: "Primary bedroom", material: 3600, labor: 2400 },
+] as const;
+
+const RENO_STYLES = [
+  { id: "boho", label: "Modern Boho", multiplier: 0.95, note: "Woven textures, warm woods, budget-friendly finishes" },
+  { id: "minimalist", label: "Warm Minimalist", multiplier: 1.1, note: "Flat-panel cabinetry, quartz, integrated lighting" },
+  { id: "midcentury", label: "Mid-Century Modern", multiplier: 1.25, note: "Walnut millwork, custom casework, statement tile" },
+] as const;
+
+// DIY vs Pro difficulty ratings
+const DIY_PROJECTS = [
+  { project: "Cabinet painting", difficulty: "Easy DIY", score: 9, diy: 350, pro: 2500 },
+  { project: "Interior wall painting", difficulty: "Easy DIY", score: 9, diy: 280, pro: 1900 },
+  { project: "Luxury vinyl plank flooring", difficulty: "Moderate DIY", score: 6, diy: 1400, pro: 5200 },
+  { project: "Tile backsplash", difficulty: "Moderate DIY", score: 6, diy: 420, pro: 1800 },
+  { project: "Bathroom vanity swap", difficulty: "Moderate DIY", score: 5, diy: 650, pro: 2200 },
+  { project: "Panel upgrade / rewiring", difficulty: "Pro only", score: 1, diy: 0, pro: 4200 },
+  { project: "Load-bearing wall removal", difficulty: "Pro only", score: 1, diy: 0, pro: 8500 },
+  { project: "Roof replacement", difficulty: "Pro only", score: 1, diy: 0, pro: 14500 },
+] as const;
 
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
   return (
@@ -118,9 +153,29 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
       </div>
       <div className="p-4">
         <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
-        <p className="mt-1 text-sm font-medium text-primary">
-          Est. {formatPrice(Math.round(monthlyPayment(l.price, mortgage)))}/mo
-        </p>
+        {(() => {
+          const pay = monthlyPayment(l.price, mortgage);
+          const net = Math.max(pay - mortgage.rentalIncome, 0);
+          const offset = pay > 0 ? Math.min((mortgage.rentalIncome / pay) * 100, 100) : 0;
+          return (
+            <>
+              <p className="mt-1 text-sm font-medium text-primary">
+                Est. {formatPrice(pay)}/mo
+                {mortgage.rentalIncome > 0 && (
+                  <span className="text-muted-foreground line-through decoration-muted-foreground/60"> </span>
+                )}
+              </p>
+              {mortgage.rentalIncome > 0 && (
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {formatPrice(net)}/mo after rent
+                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {Math.round(offset)}% offset
+                  </span>
+                </p>
+              )}
+            </>
+          );
+        })()}
         <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <BedDouble className="h-4 w-4" />
