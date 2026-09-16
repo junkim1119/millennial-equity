@@ -254,13 +254,13 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
               {showMap ? "Hide map" : "Show mini-map"}
             </button>
             {showMap && (
-              <img
+              <iframe
                 src={mapUrl}
-                alt={`Map showing the location of ${l.address}, ${l.city}`}
+                title={`Map showing the location of ${l.address}, ${l.city}`}
                 loading="lazy"
-                width={600}
-                height={180}
-                className="mt-2 w-full rounded-lg border border-border object-cover"
+                className="mt-2 h-44 w-full rounded-lg border border-border"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
               />
             )}
           </div>
