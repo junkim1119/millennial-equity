@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator, Home, Hammer, Wrench, PaintRoller } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator, Home, Hammer, Wrench, PaintRoller, BadgeCheck, Map as MapIcon, ExternalLink } from "lucide-react";
 
 import listing1 from "../assets/listing-1.jpg";
 import listing2 from "../assets/listing-2.jpg";
