@@ -159,12 +159,7 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
           const offset = pay > 0 ? Math.min((mortgage.rentalIncome / pay) * 100, 100) : 0;
           return (
             <>
-              <p className="mt-1 text-sm font-medium text-primary">
-                Est. {formatPrice(pay)}/mo
-                {mortgage.rentalIncome > 0 && (
-                  <span className="text-muted-foreground line-through decoration-muted-foreground/60"> </span>
-                )}
-              </p>
+              <p className="mt-1 text-sm font-medium text-primary">Est. {formatPrice(pay)}/mo</p>
               {mortgage.rentalIncome > 0 && (
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {formatPrice(net)}/mo after rent
