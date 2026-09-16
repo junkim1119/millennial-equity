@@ -163,6 +163,10 @@ function Index() {
   const [maxPrice, setMaxPrice] = useState(PRICE_MAX);
   const [minBeds, setMinBeds] = useState(0);
   const [minBaths, setMinBaths] = useState(0);
+  const [rate, setRate] = useState(6.5);
+  const [downPct, setDownPct] = useState(20);
+  const [termYears, setTermYears] = useState(30);
+  const mortgage: MortgageSettings = { rate, downPct, termYears };
 
   const results = useMemo(
     () =>
@@ -431,7 +435,7 @@ function Index() {
 
                 <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {nearbyResults.map((l) => (
-                    <ListingCard key={l.id} l={l} />
+                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
                   ))}
                 </div>
               </div>
@@ -445,7 +449,7 @@ function Index() {
                 {relaxedNote && <p className="mt-1 text-sm text-muted-foreground">{relaxedNote}</p>}
                 <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {relaxedResults.map((l) => (
-                    <ListingCard key={l.id} l={l} />
+                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
                   ))}
                 </div>
               </div>
@@ -454,7 +458,7 @@ function Index() {
         ) : (
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((l) => (
-              <ListingCard key={l.id} l={l} />
+              <ListingCard key={l.id} l={l} mortgage={mortgage} />
             ))}
           </div>
         )}
