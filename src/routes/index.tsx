@@ -535,6 +535,227 @@ function Index() {
           <p className="mt-3 text-xs text-muted-foreground">
             Principal and interest only. Taxes, insurance, and HOA dues are not included.
           </p>
+
+          {/* House-hacking estimator */}
+          <div className="mt-6 border-t border-border pt-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Home className="h-4 w-4" />
+              House-hacking estimator
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Rent out part of the home and see how much of the mortgage it covers.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {RENTAL_SPACES.map((s) => (
+                <div
+                  key={s.id}
+                  className={`rounded-lg border p-3 transition-colors ${
+                    rentals[s.id] ? "border-primary bg-accent" : "border-input bg-background"
+                  }`}
+                >
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={rentals[s.id]}
+                      onChange={(e) => setRentals((p) => ({ ...p, [s.id]: e.target.checked }))}
+                      className="mt-1 h-4 w-4 accent-primary"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-foreground">{s.label}</span>
+                      <span className="block text-xs text-muted-foreground">{s.detail}</span>
+                    </span>
+                  </label>
+                  <div className="mt-3">
+                    <label
+                      htmlFor={`rent-${s.id}`}
+                      className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                    >
+                      Rent: <span className="text-foreground">{formatPrice(rentAmounts[s.id])}/mo</span>
+                    </label>
+                    <input
+                      id={`rent-${s.id}`}
+                      type="range"
+                      min={300}
+                      max={3500}
+                      step={50}
+                      value={rentAmounts[s.id]}
+                      onChange={(e) => setRentAmounts((p) => ({ ...p, [s.id]: Number(e.target.value) }))}
+                      disabled={!rentals[s.id]}
+                      className="mt-2 w-full accent-primary disabled:opacity-40"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-foreground">
+              {rentalIncome > 0 ? (
+                <>
+                  Estimated rental income:{" "}
+                  <span className="font-semibold">{formatPrice(rentalIncome)}/mo</span>. Every listing below now shows
+                  its net payment and how much of the mortgage is offset.
+                </>
+              ) : (
+                <span className="text-muted-foreground">Select a rentable space to see your reduced net payment.</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Renovation cost estimator */}
+        <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <PaintRoller className="h-4 w-4" />
+                Instant renovation cost estimator
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Pick a room and a style to budget your remodel before you make an offer.
+              </p>
+            </div>
+            <button
+              onClick={() => setRenoOpen(true)}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Estimate a remodel
+            </button>
+          </div>
+        </div>
+
+        {renoOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Renovation cost estimator"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4"
+            onClick={() => setRenoOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-lg"
+            >
+              <div className="flex items-start justify-between">
+                <h3 className="text-lg font-semibold text-foreground">Renovation cost estimator</h3>
+                <button
+                  onClick={() => setRenoOpen(false)}
+                  aria-label="Close"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mt-5">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Room</span>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {RENO_ROOMS.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => setRenoRoom(r.id)}
+                      aria-pressed={renoRoom === r.id}
+                      className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                        renoRoom === r.id
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Style</span>
+                <div className="mt-2 grid gap-2">
+                  {RENO_STYLES.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setRenoStyle(s.id)}
+                      aria-pressed={renoStyle === s.id}
+                      className={`rounded-md border px-3 py-2 text-left transition-colors ${
+                        renoStyle === s.id
+                          ? "border-primary bg-accent"
+                          : "border-input bg-background hover:bg-accent"
+                      }`}
+                    >
+                      <span className="block text-sm font-medium text-foreground">{s.label}</span>
+                      <span className="block text-xs text-muted-foreground">{s.note}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-lg border border-border bg-secondary p-4">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Materials</span>
+                  <span className="font-medium text-foreground">{formatPrice(renoMaterial)}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Labor</span>
+                  <span className="font-medium text-foreground">{formatPrice(renoLabor)}</span>
+                </div>
+                <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
+                  <span className="text-sm font-semibold text-foreground">
+                    Total — {room.label}, {style.label}
+                  </span>
+                  <span className="text-2xl font-bold text-foreground">{formatPrice(renoMaterial + renoLabor)}</span>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Ballpark ranges for a typical mid-size room. Local labor rates and permits can shift totals.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* DIY vs Pro */}
+        <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Hammer className="h-4 w-4" />
+            DIY vs. Pro difficulty ratings
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Common fixes ranked by how DIY-friendly they are, with the sweat equity you keep by doing it yourself.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {DIY_PROJECTS.map((p) => {
+              const proOnly = p.diy === 0;
+              const savings = proOnly ? 0 : p.pro - p.diy;
+              return (
+                <div key={p.project} className="rounded-lg border border-border bg-background p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground">{p.project}</p>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        proOnly ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
+                      }`}
+                    >
+                      {p.difficulty}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1" aria-label={`DIY friendliness ${p.score} of 10`}>
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full ${i < p.score ? "bg-primary" : "bg-secondary"}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Wrench className="h-4 w-4" />
+                      DIY {proOnly ? "n/a" : formatPrice(p.diy)}
+                    </span>
+                    <span>Pro {formatPrice(p.pro)}</span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-foreground">
+                    {proOnly ? "Hire a licensed pro — not a safe DIY job." : `Sweat equity saved: ${formatPrice(savings)}`}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="mt-8 flex items-baseline justify-between">
