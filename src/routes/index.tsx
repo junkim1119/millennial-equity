@@ -221,7 +221,22 @@ function Index() {
   const [rate, setRate] = useState(6.5);
   const [downPct, setDownPct] = useState(20);
   const [termYears, setTermYears] = useState(30);
-  const mortgage: MortgageSettings = { rate, downPct, termYears };
+  const [rentals, setRentals] = useState<Record<RentalId, boolean>>({ bedroom: false, basement: false, adu: false });
+  const [rentAmounts, setRentAmounts] = useState<Record<RentalId, number>>({
+    bedroom: RENTAL_SPACES[0].rent,
+    basement: RENTAL_SPACES[1].rent,
+    adu: RENTAL_SPACES[2].rent,
+  });
+  const rentalIncome = RENTAL_SPACES.reduce((sum, s) => sum + (rentals[s.id] ? rentAmounts[s.id] : 0), 0);
+  const mortgage: MortgageSettings = { rate, downPct, termYears, rentalIncome };
+
+  const [renoRoom, setRenoRoom] = useState<(typeof RENO_ROOMS)[number]["id"]>("kitchen");
+  const [renoStyle, setRenoStyle] = useState<(typeof RENO_STYLES)[number]["id"]>("boho");
+  const [renoOpen, setRenoOpen] = useState(false);
+  const room = RENO_ROOMS.find((r) => r.id === renoRoom)!;
+  const style = RENO_STYLES.find((s) => s.id === renoStyle)!;
+  const renoMaterial = room.material * style.multiplier;
+  const renoLabor = room.labor * style.multiplier;
 
   const results = useMemo(
     () =>
