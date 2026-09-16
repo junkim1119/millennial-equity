@@ -282,10 +282,10 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "HomeHunt — Find Homes for Sale by Zip Code" },
-      { name: "description", content: "Search recent property listings by zip code. Filter by price, bedrooms, and bathrooms to find your next home." },
-      { property: "og:title", content: "HomeHunt — Find Homes for Sale by Zip Code" },
-      { property: "og:description", content: "Search recent property listings by zip code with live filters for price, beds, and baths." },
+      { title: "MillenialHomeHunt — Find Homes for Sale by Zip Code" },
+      { name: "description", content: "Find homes tailored for young homeowners. Search listings by zip code, estimate mortgage and house-hacking payments, and compare DIY vs. pro renovation costs." },
+      { property: "og:title", content: "MillenialHomeHunt — Find Homes for Sale by Zip Code" },
+      { property: "og:description", content: "Find homes tailored for young homeowners. Search listings by zip code, estimate mortgage and house-hacking payments, and compare DIY vs. pro renovation costs." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -416,7 +416,7 @@ function Index() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
             <MapPin className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold tracking-tight">HomeHunt</span>
+            <span className="text-xl font-bold tracking-tight">MillenialHomeHunt</span>
           </div>
           <a
             href="#listings"
@@ -431,10 +431,10 @@ function Index() {
       <section className="bg-secondary">
         <div className="mx-auto max-w-6xl px-4 py-16 text-center sm:py-24">
           <h1 className="mx-auto max-w-2xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Find your next home by zip code
+            Finding the right home for young homeowners
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Fresh listings updated daily. Filter by price, bedrooms, and bathrooms to zero in on the right place.
+            More customized, more hacking, more DIY.
           </p>
           <div className="mx-auto mt-8 flex max-w-md items-center gap-2 rounded-lg border border-input bg-card p-2 shadow-sm">
             <Search className="ml-2 h-5 w-5 shrink-0 text-muted-foreground" />
@@ -904,7 +904,7 @@ function Index() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-8 text-center">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            <span className="font-bold text-foreground">HomeHunt</span>
+            <span className="font-bold text-foreground">MillenialHomeHunt</span>
           </div>
           <p className="text-sm text-muted-foreground">Demo listings shown for illustration. Contact us for live MLS data.</p>
         </div>
