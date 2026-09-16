@@ -118,6 +118,9 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
       </div>
       <div className="p-4">
         <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
+        <p className="mt-1 text-sm font-medium text-primary">
+          Est. {formatPrice(Math.round(monthlyPayment(l.price, mortgage)))}/mo
+        </p>
         <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <BedDouble className="h-4 w-4" />
