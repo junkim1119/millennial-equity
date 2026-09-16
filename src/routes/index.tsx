@@ -120,36 +120,38 @@ function Index() {
     [zip, maxPrice, minBeds, minBaths]
   );
 
-  // Fallback 1: same filters, but neighboring zip codes (same 3-digit prefix)
+  // Fallback 1: same filters, closest zip codes by shared prefix (regional match)
   const nearbyResults = useMemo(() => {
-    if (results.length > 0 || zip.length < 3) return [];
-    const prefix = zip.slice(0, 3);
+    if (results.length > 0 || zip === "") return [];
+    const sharedPrefix = (other: string) => {
+      let n = 0;
+      while (n < zip.length && n < other.length && zip[n] === other[n]) n++;
+      return n;
+    };
     return LISTINGS.filter(
       (l) =>
-        l.zip.startsWith(prefix) &&
-        l.zip !== zip &&
-        l.price <= maxPrice &&
-        l.beds >= minBeds &&
-        l.baths >= minBaths
-    ).slice(0, 3);
+        l.zip !== zip && l.price <= maxPrice && l.beds >= minBeds && l.baths >= minBaths
+    )
+      .sort((a, b) => sharedPrefix(b.zip) - sharedPrefix(a.zip) || a.price - b.price)
+      .slice(0, 3);
   }, [results.length, zip, maxPrice, minBeds, minBaths]);
 
-  // Fallback 2: same zip, but relax price/beds/baths criteria
+  // Fallback 2: relax price/beds/baths criteria across all listings
   const relaxedResults = useMemo(() => {
     if (results.length > 0 || nearbyResults.length > 0) return [];
-    const pool = zip ? LISTINGS.filter((l) => l.zip.startsWith(zip)) : LISTINGS;
-    return pool
-      .filter((l) => !(l.price <= maxPrice && l.beds >= minBeds && l.baths >= minBaths))
+    return [...LISTINGS]
       .sort((a, b) => {
         const score = (l: Listing) =>
           (l.price > maxPrice ? 1 : 0) + (l.beds < minBeds ? 1 : 0) + (l.baths < minBaths ? 1 : 0);
         return score(a) - score(b) || a.price - b.price;
       })
       .slice(0, 3);
-  }, [results.length, nearbyResults.length, zip, maxPrice, minBeds, minBaths]);
+  }, [results.length, nearbyResults.length, maxPrice, minBeds, minBaths]);
 
   const relaxedNote = useMemo(() => {
     const adjustments: string[] = [];
+    if (zip !== "" && relaxedResults.some((l) => !l.zip.startsWith(zip)))
+      adjustments.push("other areas");
     if (maxPrice < PRICE_MAX && relaxedResults.some((l) => l.price > maxPrice))
       adjustments.push(`price above ${formatPrice(maxPrice)}`);
     if (minBeds > 0 && relaxedResults.some((l) => l.beds < minBeds))
@@ -159,7 +161,8 @@ function Index() {
     return adjustments.length > 0
       ? `We relaxed your criteria to include homes with ${adjustments.join(", ")}.`
       : "";
-  }, [relaxedResults, maxPrice, minBeds, minBaths]);
+  }, [relaxedResults, zip, maxPrice, minBeds, minBaths]);
+
 
   const hasFilters = zip !== "" || maxPrice < PRICE_MAX || minBeds > 0 || minBaths > 0;
 
@@ -338,7 +341,7 @@ function Index() {
             {nearbyResults.length > 0 && (
               <div className="mt-10">
                 <h3 className="text-lg font-semibold text-foreground">
-                  Nearby in neighboring zip codes
+                  Closest listings in nearby areas
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Nothing in zip {zip}, but these homes nearby match the rest of your filters.
