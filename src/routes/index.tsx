@@ -42,6 +42,52 @@ function formatPrice(n: number) {
   return "$" + n.toLocaleString("en-US");
 }
 
+function ListingCard({ l }: { l: Listing }) {
+  return (
+    <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <img
+          src={l.image}
+          alt={`Home at ${l.address}, ${l.city}`}
+          loading="lazy"
+          width={1024}
+          height={768}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        {l.tag && (
+          <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
+            {l.tag}
+          </span>
+        )}
+        <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground">
+          {l.daysOnMarket}d on market
+        </span>
+      </div>
+      <div className="p-4">
+        <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
+        <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <BedDouble className="h-4 w-4" />
+            {l.beds} bd
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Bath className="h-4 w-4" />
+            {l.baths} ba
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Ruler className="h-4 w-4" />
+            {l.sqft.toLocaleString()} sqft
+          </span>
+        </div>
+        <p className="mt-3 text-sm font-medium text-foreground">{l.address}</p>
+        <p className="text-sm text-muted-foreground">
+          {l.city} {l.zip}
+        </p>
+      </div>
+    </article>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -73,6 +119,47 @@ function Index() {
       ),
     [zip, maxPrice, minBeds, minBaths]
   );
+
+  // Fallback 1: same filters, but neighboring zip codes (same 3-digit prefix)
+  const nearbyResults = useMemo(() => {
+    if (results.length > 0 || zip.length < 3) return [];
+    const prefix = zip.slice(0, 3);
+    return LISTINGS.filter(
+      (l) =>
+        l.zip.startsWith(prefix) &&
+        l.zip !== zip &&
+        l.price <= maxPrice &&
+        l.beds >= minBeds &&
+        l.baths >= minBaths
+    ).slice(0, 3);
+  }, [results.length, zip, maxPrice, minBeds, minBaths]);
+
+  // Fallback 2: same zip, but relax price/beds/baths criteria
+  const relaxedResults = useMemo(() => {
+    if (results.length > 0 || nearbyResults.length > 0) return [];
+    const pool = zip ? LISTINGS.filter((l) => l.zip.startsWith(zip)) : LISTINGS;
+    return pool
+      .filter((l) => !(l.price <= maxPrice && l.beds >= minBeds && l.baths >= minBaths))
+      .sort((a, b) => {
+        const score = (l: Listing) =>
+          (l.price > maxPrice ? 1 : 0) + (l.beds < minBeds ? 1 : 0) + (l.baths < minBaths ? 1 : 0);
+        return score(a) - score(b) || a.price - b.price;
+      })
+      .slice(0, 3);
+  }, [results.length, nearbyResults.length, zip, maxPrice, minBeds, minBaths]);
+
+  const relaxedNote = useMemo(() => {
+    const adjustments: string[] = [];
+    if (maxPrice < PRICE_MAX && relaxedResults.some((l) => l.price > maxPrice))
+      adjustments.push(`price above ${formatPrice(maxPrice)}`);
+    if (minBeds > 0 && relaxedResults.some((l) => l.beds < minBeds))
+      adjustments.push(`fewer than ${minBeds} beds`);
+    if (minBaths > 0 && relaxedResults.some((l) => l.baths < minBaths))
+      adjustments.push(`fewer than ${minBaths} baths`);
+    return adjustments.length > 0
+      ? `We relaxed your criteria to include homes with ${adjustments.join(", ")}.`
+      : "";
+  }, [relaxedResults, maxPrice, minBeds, minBaths]);
 
   const hasFilters = zip !== "" || maxPrice < PRICE_MAX || minBeds > 0 || minBaths > 0;
 
@@ -234,63 +321,54 @@ function Index() {
         </div>
 
         {results.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-dashed border-border bg-card p-16 text-center">
-            <p className="text-lg font-medium text-foreground">No homes match your filters</p>
-            <p className="mt-2 text-sm text-muted-foreground">Try widening the price range or clearing the zip code.</p>
-            <button
-              onClick={clearFilters}
-              className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Reset filters
-            </button>
+          <div className="mt-8">
+            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <p className="text-lg font-medium text-foreground">No homes match your filters</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try widening the price range or clearing the zip code.
+              </p>
+              <button
+                onClick={clearFilters}
+                className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Reset filters
+              </button>
+            </div>
+
+            {nearbyResults.length > 0 && (
+              <div className="mt-10">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Nearby in neighboring zip codes
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Nothing in zip {zip}, but these homes nearby match the rest of your filters.
+                </p>
+                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {nearbyResults.map((l) => (
+                    <ListingCard key={l.id} l={l} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {nearbyResults.length === 0 && relaxedResults.length > 0 && (
+              <div className="mt-10">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Close matches with relaxed criteria
+                </h3>
+                {relaxedNote && <p className="mt-1 text-sm text-muted-foreground">{relaxedNote}</p>}
+                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {relaxedResults.map((l) => (
+                    <ListingCard key={l.id} l={l} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((l) => (
-              <article
-                key={l.id}
-                className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={l.image}
-                    alt={`Home at ${l.address}, ${l.city}`}
-                    loading="lazy"
-                    width={1024}
-                    height={768}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  {l.tag && (
-                    <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
-                      {l.tag}
-                    </span>
-                  )}
-                  <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground">
-                    {l.daysOnMarket}d on market
-                  </span>
-                </div>
-                <div className="p-4">
-                  <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
-                  <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <BedDouble className="h-4 w-4" />
-                      {l.beds} bd
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Bath className="h-4 w-4" />
-                      {l.baths} ba
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Ruler className="h-4 w-4" />
-                      {l.sqft.toLocaleString()} sqft
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm font-medium text-foreground">{l.address}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {l.city} {l.zip}
-                  </p>
-                </div>
-              </article>
+              <ListingCard key={l.id} l={l} />
             ))}
           </div>
         )}
