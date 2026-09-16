@@ -251,7 +251,7 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
               onClick={() => setShowMap((v) => !v)}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             >
-              <Map className="h-4 w-4" />
+              <MapIcon className="h-4 w-4" />
               {showMap ? "Hide map" : "Show mini-map"}
             </button>
             {showMap && (
