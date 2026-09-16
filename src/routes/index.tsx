@@ -24,6 +24,7 @@ type Listing = {
   sqft: number;
   daysOnMarket: number;
   tag?: string;
+  verified?: boolean;
 };
 
 // Coordinates and addresses below were confirmed with the Google Maps Geocoding API
