@@ -74,6 +74,47 @@ function Index() {
     [zip, maxPrice, minBeds, minBaths]
   );
 
+  // Fallback 1: same filters, but neighboring zip codes (same 3-digit prefix)
+  const nearbyResults = useMemo(() => {
+    if (results.length > 0 || zip.length < 3) return [];
+    const prefix = zip.slice(0, 3);
+    return LISTINGS.filter(
+      (l) =>
+        l.zip.startsWith(prefix) &&
+        l.zip !== zip &&
+        l.price <= maxPrice &&
+        l.beds >= minBeds &&
+        l.baths >= minBaths
+    ).slice(0, 3);
+  }, [results.length, zip, maxPrice, minBeds, minBaths]);
+
+  // Fallback 2: same zip, but relax price/beds/baths criteria
+  const relaxedResults = useMemo(() => {
+    if (results.length > 0 || nearbyResults.length > 0) return [];
+    const pool = zip ? LISTINGS.filter((l) => l.zip.startsWith(zip)) : LISTINGS;
+    return pool
+      .filter((l) => !(l.price <= maxPrice && l.beds >= minBeds && l.baths >= minBaths))
+      .sort((a, b) => {
+        const score = (l: Listing) =>
+          (l.price > maxPrice ? 1 : 0) + (l.beds < minBeds ? 1 : 0) + (l.baths < minBaths ? 1 : 0);
+        return score(a) - score(b) || a.price - b.price;
+      })
+      .slice(0, 3);
+  }, [results.length, nearbyResults.length, zip, maxPrice, minBeds, minBaths]);
+
+  const relaxedNote = useMemo(() => {
+    const adjustments: string[] = [];
+    if (maxPrice < PRICE_MAX && relaxedResults.some((l) => l.price > maxPrice))
+      adjustments.push(`price above ${formatPrice(maxPrice)}`);
+    if (minBeds > 0 && relaxedResults.some((l) => l.beds < minBeds))
+      adjustments.push(`fewer than ${minBeds} beds`);
+    if (minBaths > 0 && relaxedResults.some((l) => l.baths < minBaths))
+      adjustments.push(`fewer than ${minBaths} baths`);
+    return adjustments.length > 0
+      ? `We relaxed your criteria to include homes with ${adjustments.join(", ")}.`
+      : "";
+  }, [relaxedResults, maxPrice, minBeds, minBaths]);
+
   const hasFilters = zip !== "" || maxPrice < PRICE_MAX || minBeds > 0 || minBaths > 0;
 
   function clearFilters() {
