@@ -408,8 +408,9 @@ function Index() {
                   Closest listings in nearby areas
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Nothing in zip {zip}, but these homes nearby match the rest of your filters.
+                  {nearbyNote || `Nothing in zip ${zip}, but these homes nearby match the rest of your filters.`}
                 </p>
+
                 <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {nearbyResults.map((l) => (
                     <ListingCard key={l.id} l={l} />
