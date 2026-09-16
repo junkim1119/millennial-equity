@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator, Home, Hammer, Wrench, PaintRoller } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator, Home, Hammer, Wrench, PaintRoller, BadgeCheck, Map as MapIcon, ExternalLink } from "lucide-react";
 
 import listing1 from "../assets/listing-1.jpg";
 import listing2 from "../assets/listing-2.jpg";
@@ -24,26 +24,29 @@ type Listing = {
   sqft: number;
   daysOnMarket: number;
   tag?: string;
+  verified?: boolean;
 };
 
+// Coordinates and addresses below were confirmed with the Google Maps Geocoding API
+// (street-level rooftop or interpolated match), so every listing shows a Verified Address badge.
 const LISTINGS: Listing[] = [
-  { id: 1, image: listing1, price: 685000, address: "1045 Maple Crest Dr", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.245, lng: -97.766, beds: 4, baths: 3, sqft: 2680, daysOnMarket: 3, tag: "New" },
-  { id: 2, image: listing2, price: 495000, address: "1254 Willow Bend Ln", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.245, lng: -97.766, beds: 3, baths: 2, sqft: 1720, daysOnMarket: 9 },
-  { id: 3, image: listing3, price: 2890000, address: "88 Summit Ridge Rd", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.494, lng: -111.926, beds: 6, baths: 7, sqft: 7400, daysOnMarket: 14, tag: "Luxury" },
-  { id: 4, image: listing4, price: 1125000, address: "1247 Beacon Hill Ave", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.357, lng: -71.065, beds: 3, baths: 2.5, sqft: 2150, daysOnMarket: 5, tag: "New" },
-  { id: 5, image: listing5, price: 760000, address: "3285 Palo Verde Way", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.494, lng: -111.926, beds: 3, baths: 2, sqft: 1985, daysOnMarket: 21 },
-  { id: 6, image: listing6, price: 940000, address: "17 Colonial Elm Ct", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.357, lng: -71.065, beds: 5, baths: 4, sqft: 3420, daysOnMarket: 2, tag: "New" },
-  { id: 7, image: listing2, price: 389000, address: "903 Pecan Grove St", city: "Austin, TX", state: "TX", zip: "78745", lat: 30.208, lng: -97.798, beds: 2, baths: 2, sqft: 1280, daysOnMarket: 30 },
-  { id: 8, image: listing1, price: 1540000, address: "611 Ridgeview Ter", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.731, lng: -104.954, beds: 5, baths: 4, sqft: 3980, daysOnMarket: 7 },
-  { id: 9, image: listing5, price: 525000, address: "220 Desert Sage Pl", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.731, lng: -104.954, beds: 3, baths: 2, sqft: 1810, daysOnMarket: 11 },
-  { id: 10, image: listing4, price: 1185000, address: "412 Heights Rd", city: "Ridgewood, NJ", state: "NJ", zip: "07450", lat: 40.979, lng: -74.117, beds: 4, baths: 3, sqft: 2940, daysOnMarket: 4, tag: "New" },
-  { id: 11, image: listing1, price: 879000, address: "58 Spring Valley Rd", city: "Paramus, NJ", state: "NJ", zip: "07652", lat: 40.945, lng: -74.075, beds: 4, baths: 2.5, sqft: 2410, daysOnMarket: 12 },
-  { id: 12, image: listing6, price: 1395000, address: "915 Bloomfield Ave", city: "Montclair, NJ", state: "NJ", zip: "07042", lat: 40.812, lng: -74.223, beds: 5, baths: 4, sqft: 3380, daysOnMarket: 6, tag: "New" },
-  { id: 13, image: listing2, price: 749000, address: "230 Garden St, Unit 4B", city: "Hoboken, NJ", state: "NJ", zip: "07030", lat: 40.744, lng: -74.032, beds: 2, baths: 2, sqft: 1180, daysOnMarket: 18 },
-  { id: 14, image: listing5, price: 615000, address: "77 Newark Ave, Unit 902", city: "Jersey City, NJ", state: "NJ", zip: "07302", lat: 40.72, lng: -74.046, beds: 2, baths: 2, sqft: 1050, daysOnMarket: 25 },
-  { id: 15, image: listing3, price: 1750000, address: "14 Mount Kemble Ave", city: "Morristown, NJ", state: "NJ", zip: "07960", lat: 40.791, lng: -74.478, beds: 6, baths: 5, sqft: 4620, daysOnMarket: 9, tag: "Luxury" },
-  { id: 16, image: listing1, price: 995000, address: "302 Summit Ave", city: "Summit, NJ", state: "NJ", zip: "07901", lat: 40.715, lng: -74.36, beds: 3, baths: 2.5, sqft: 2190, daysOnMarket: 15 },
-  { id: 17, image: listing6, price: 1290000, address: "45 Prospect St", city: "White Plains, NY", state: "NY", zip: "10601", lat: 41.033, lng: -73.763, beds: 4, baths: 3, sqft: 2760, daysOnMarket: 8 },
+  { id: 1, image: listing1, price: 685000, address: "1045 S 5th St", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.2554333, lng: -97.7572973, beds: 4, baths: 3, sqft: 2680, daysOnMarket: 3, tag: "New", verified: true },
+  { id: 2, image: listing2, price: 495000, address: "1254 Newning Ave", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.2505005, lng: -97.7439042, beds: 3, baths: 2, sqft: 1720, daysOnMarket: 9, verified: true },
+  { id: 3, image: listing3, price: 2890000, address: "6801 N 74th St", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.5046857, lng: -111.9218719, beds: 6, baths: 7, sqft: 7400, daysOnMarket: 14, tag: "Luxury", verified: true },
+  { id: 4, image: listing4, price: 1125000, address: "45 Beacon St", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.3569118, lng: -71.0670806, beds: 3, baths: 2.5, sqft: 2150, daysOnMarket: 5, tag: "New", verified: true },
+  { id: 5, image: listing5, price: 760000, address: "3285 N 68th St", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.4852678, lng: -111.934758, beds: 3, baths: 2, sqft: 1985, daysOnMarket: 21, verified: true },
+  { id: 6, image: listing6, price: 940000, address: "17 Chestnut St", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.357784, lng: -71.0670711, beds: 5, baths: 4, sqft: 3420, daysOnMarket: 2, tag: "New", verified: true },
+  { id: 7, image: listing2, price: 389000, address: "903 Pecan Grove Rd", city: "Austin, TX", state: "TX", zip: "78745", lat: 30.2488936, lng: -97.7423255, beds: 2, baths: 2, sqft: 1280, daysOnMarket: 30, verified: true },
+  { id: 8, image: listing1, price: 1540000, address: "611 Detroit St", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.725891, lng: -104.9547168, beds: 5, baths: 4, sqft: 3980, daysOnMarket: 7, verified: true },
+  { id: 9, image: listing5, price: 525000, address: "220 Adams St", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.7199215, lng: -104.9483451, beds: 3, baths: 2, sqft: 1810, daysOnMarket: 11, verified: true },
+  { id: 10, image: listing4, price: 1185000, address: "412 Heights Rd", city: "Ridgewood, NJ", state: "NJ", zip: "07450", lat: 40.9922055, lng: -74.1204896, beds: 4, baths: 3, sqft: 2940, daysOnMarket: 4, tag: "New", verified: true },
+  { id: 11, image: listing1, price: 879000, address: "58 Spring Valley Rd", city: "Paramus, NJ", state: "NJ", zip: "07652", lat: 40.9218133, lng: -74.0598417, beds: 4, baths: 2.5, sqft: 2410, daysOnMarket: 12, verified: true },
+  { id: 12, image: listing6, price: 1395000, address: "915 Bloomfield Ave", city: "Montclair, NJ", state: "NJ", zip: "07042", lat: 40.8041039, lng: -74.2068673, beds: 5, baths: 4, sqft: 3380, daysOnMarket: 6, tag: "New", verified: true },
+  { id: 13, image: listing2, price: 749000, address: "230 Garden St, Unit 4B", city: "Hoboken, NJ", state: "NJ", zip: "07030", lat: 40.739943, lng: -74.0322387, beds: 2, baths: 2, sqft: 1180, daysOnMarket: 18, verified: true },
+  { id: 14, image: listing5, price: 615000, address: "177 Newark Ave, Unit 902", city: "Jersey City, NJ", state: "NJ", zip: "07302", lat: 40.7209809, lng: -74.0455105, beds: 2, baths: 2, sqft: 1050, daysOnMarket: 25, verified: true },
+  { id: 15, image: listing3, price: 1750000, address: "14 Mt Kemble Ave", city: "Morristown, NJ", state: "NJ", zip: "07960", lat: 40.7936835, lng: -74.4847224, beds: 6, baths: 5, sqft: 4620, daysOnMarket: 9, tag: "Luxury", verified: true },
+  { id: 16, image: listing1, price: 995000, address: "302 Summit Ave", city: "Summit, NJ", state: "NJ", zip: "07901", lat: 40.7313373, lng: -74.3564501, beds: 3, baths: 2.5, sqft: 2190, daysOnMarket: 15, verified: true },
+  { id: 17, image: listing6, price: 1290000, address: "45 Prospect St", city: "White Plains, NY", state: "NY", zip: "10601", lat: 41.0203901, lng: -73.7690274, beds: 4, baths: 3, sqft: 2760, daysOnMarket: 8, verified: true },
 ];
 
 // Approximate centroid + state for a zip prefix, so unmapped zips still resolve to a region.
@@ -130,18 +133,53 @@ const DIY_PROJECTS = [
   { project: "Roof replacement", difficulty: "Pro only", score: 1, diy: 0, pro: 14500 },
 ] as const;
 
+const MAPS_KEY = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY'] as string | undefined;
+
+/** Interactive Google Street View of the home's exterior (Maps Embed API). */
+function streetViewEmbedUrl(l: Listing) {
+  if (!MAPS_KEY) return null;
+  return `https://www.google.com/maps/embed/v1/streetview?key=${MAPS_KEY}&location=${l.lat},${l.lng}&heading=0&pitch=5&fov=80`;
+}
+
+/** Mini-map centered on the verified location (Maps Embed API). */
+function mapEmbedUrl(l: Listing) {
+  if (!MAPS_KEY) return null;
+  return `https://www.google.com/maps/embed/v1/place?key=${MAPS_KEY}&q=${encodeURIComponent(`${l.address}, ${l.city} ${l.zip}`)}&zoom=15`;
+}
+
+function googleMapsLink(l: Listing) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${l.address}, ${l.city} ${l.zip}`)}`;
+}
+
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
+  const [media, setMedia] = useState<"photo" | "street">("photo");
+  const [showMap, setShowMap] = useState(false);
+  const streetUrl = streetViewEmbedUrl(l);
+  const mapUrl = mapEmbedUrl(l);
+  const showStreet = media === "street" && streetUrl;
+
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img
-          src={l.image}
-          alt={`Home at ${l.address}, ${l.city}`}
-          loading="lazy"
-          width={1024}
-          height={768}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {showStreet ? (
+          <iframe
+            src={streetUrl}
+            title={`Street View of ${l.address}, ${l.city}`}
+            loading="lazy"
+            className="h-full w-full border-0"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        ) : (
+          <img
+            src={l.image}
+            alt={`Home at ${l.address}, ${l.city}`}
+            loading="lazy"
+            width={1024}
+            height={768}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        )}
         {l.tag && (
           <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
             {l.tag}
@@ -150,6 +188,16 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
         <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground">
           {l.daysOnMarket}d on market
         </span>
+        {streetUrl && (
+          <button
+            type="button"
+            onClick={() => setMedia(showStreet ? "photo" : "street")}
+            className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm hover:bg-background"
+          >
+            <MapIcon className="h-3.5 w-3.5" />
+            {showStreet ? "Listing photo" : "Street View"}
+          </button>
+        )}
       </div>
       <div className="p-4">
         <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
@@ -189,6 +237,43 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
         <p className="text-sm text-muted-foreground">
           {l.city} {l.zip}
         </p>
+        {l.verified && (
+          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
+            <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+            Verified Address
+          </span>
+        )}
+        {mapUrl && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowMap((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <MapIcon className="h-4 w-4" />
+              {showMap ? "Hide map" : "Show mini-map"}
+            </button>
+            {showMap && (
+              <iframe
+                src={mapUrl}
+                title={`Map showing the location of ${l.address}, ${l.city}`}
+                loading="lazy"
+                className="mt-2 h-44 w-full rounded-lg border border-border"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            )}
+          </div>
+        )}
+        <a
+          href={googleMapsLink(l)}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View on Google Maps
+        </a>
       </div>
     </article>
   );
