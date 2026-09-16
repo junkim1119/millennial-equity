@@ -78,13 +78,24 @@ function milesBetween(a: { lat: number; lng: number }, b: { lat: number; lng: nu
 
 
 const PRICE_MIN = 0;
-const PRICE_MAX = 3000000;
+const PRICE_MAX = 2000000;
+
+type MortgageSettings = { rate: number; downPct: number; termYears: number };
 
 function formatPrice(n: number) {
   return "$" + n.toLocaleString("en-US");
 }
 
-function ListingCard({ l }: { l: Listing }) {
+function monthlyPayment(price: number, { rate, downPct, termYears }: MortgageSettings) {
+  const principal = price * (1 - downPct / 100);
+  const n = termYears * 12;
+  const r = rate / 100 / 12;
+  if (principal <= 0) return 0;
+  if (r === 0) return principal / n;
+  return (principal * r) / (1 - Math.pow(1 + r, -n));
+}
+
+function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
       <div className="relative aspect-[4/3] overflow-hidden">
