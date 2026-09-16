@@ -162,33 +162,55 @@ function Index() {
     [zip, maxPrice, minBeds, minBaths]
   );
 
-  // Fallback 1: same filters, closest zip codes by shared prefix (regional match)
+  const area = useMemo(() => (zip === "" ? null : areaForZip(zip)), [zip]);
+
+  // Fallback 1: same filters, closest listings in the same state (prefer under 100 miles)
   const nearbyResults = useMemo(() => {
     if (results.length > 0 || zip === "") return [];
+    const matches = LISTINGS.filter(
+      (l) => l.zip !== zip && l.price <= maxPrice && l.beds >= minBeds && l.baths >= minBaths
+    );
+    if (area) {
+      const withDistance = matches
+        .map((l) => ({ l, miles: milesBetween(area, l) }))
+        .sort((a, b) => a.miles - b.miles);
+      const sameState = withDistance.filter((x) => x.l.state === area.state);
+      const within100 = sameState.filter((x) => x.miles <= 100);
+      const pick = within100.length > 0 ? within100 : sameState;
+      if (pick.length > 0) return pick.slice(0, 3).map((x) => x.l);
+      return withDistance.slice(0, 3).map((x) => x.l);
+    }
     const sharedPrefix = (other: string) => {
       let n = 0;
       while (n < zip.length && n < other.length && zip[n] === other[n]) n++;
       return n;
     };
-    return LISTINGS.filter(
-      (l) =>
-        l.zip !== zip && l.price <= maxPrice && l.beds >= minBeds && l.baths >= minBaths
-    )
+    return matches
       .sort((a, b) => sharedPrefix(b.zip) - sharedPrefix(a.zip) || a.price - b.price)
       .slice(0, 3);
-  }, [results.length, zip, maxPrice, minBeds, minBaths]);
+  }, [results.length, zip, area, maxPrice, minBeds, minBaths]);
 
-  // Fallback 2: relax price/beds/baths criteria across all listings
+  const nearbyNote = useMemo(() => {
+    if (nearbyResults.length === 0) return "";
+    if (area && nearbyResults.every((l) => l.state === area.state))
+      return `No exact matches in ${zip}, so here are the closest homes in ${area.state}.`;
+    return `No exact matches in ${zip}, so here are the closest homes we have.`;
+  }, [nearbyResults, area, zip]);
+
+  // Fallback 2: relax price/beds/baths criteria, staying in the same state when possible
   const relaxedResults = useMemo(() => {
     if (results.length > 0 || nearbyResults.length > 0) return [];
-    return [...LISTINGS]
+    const sameState = area ? LISTINGS.filter((l) => l.state === area.state) : [];
+    const pool = sameState.length > 0 ? sameState : LISTINGS;
+    return [...pool]
       .sort((a, b) => {
         const score = (l: Listing) =>
           (l.price > maxPrice ? 1 : 0) + (l.beds < minBeds ? 1 : 0) + (l.baths < minBaths ? 1 : 0);
         return score(a) - score(b) || a.price - b.price;
       })
       .slice(0, 3);
-  }, [results.length, nearbyResults.length, maxPrice, minBeds, minBaths]);
+  }, [results.length, nearbyResults.length, area, maxPrice, minBeds, minBaths]);
+
 
   const relaxedNote = useMemo(() => {
     const adjustments: string[] = [];
