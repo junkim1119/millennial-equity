@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
+import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator } from "lucide-react";
 
 import listing1 from "../assets/listing-1.jpg";
 import listing2 from "../assets/listing-2.jpg";
@@ -400,6 +400,71 @@ function Index() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mortgage calculator */}
+        <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Calculator className="h-4 w-4" />
+            Monthly payment calculator
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Adjust these and every listing below shows its estimated monthly payment.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div>
+              <label htmlFor="rate" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Interest rate: <span className="text-foreground">{rate.toFixed(2)}%</span>
+              </label>
+              <input
+                id="rate"
+                type="range"
+                min={2}
+                max={10}
+                step={0.05}
+                value={rate}
+                onChange={(e) => setRate(Number(e.target.value))}
+                className="mt-3 w-full accent-primary"
+              />
+            </div>
+            <div>
+              <label htmlFor="down" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Down payment: <span className="text-foreground">{downPct}%</span>
+              </label>
+              <input
+                id="down"
+                type="range"
+                min={0}
+                max={50}
+                step={1}
+                value={downPct}
+                onChange={(e) => setDownPct(Number(e.target.value))}
+                className="mt-3 w-full accent-primary"
+              />
+            </div>
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Loan term</span>
+              <div className="mt-1 flex gap-1">
+                {[15, 20, 30].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setTermYears(n)}
+                    aria-pressed={termYears === n}
+                    className={`flex-1 rounded-md border px-2 py-2 text-sm font-medium transition-colors ${
+                      termYears === n
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-background text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {n} yr
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Principal and interest only. Taxes, insurance, and HOA dues are not included.
+          </p>
         </div>
 
         <div className="mt-8 flex items-baseline justify-between">
