@@ -133,16 +133,59 @@ const DIY_PROJECTS = [
   { project: "Roof replacement", difficulty: "Pro only", score: 1, diy: 0, pro: 14500 },
 ] as const;
 
+const MAPS_KEY = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY'] as string | undefined;
+
+function streetViewUrl(l: Listing) {
+  if (!MAPS_KEY) return null;
+  return `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${l.lat},${l.lng}&fov=80&pitch=8&source=outdoor&return_error_code=true&key=${MAPS_KEY}`;
+}
+
+function staticMapUrl(l: Listing) {
+  if (!MAPS_KEY) return null;
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${l.lat},${l.lng}&zoom=15&size=600x180&scale=2&markers=color:red%7C${l.lat},${l.lng}&key=${MAPS_KEY}`;
+}
+
+function googleMapsLink(l: Listing) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${l.address}, ${l.city} ${l.zip}`)}`;
+}
+
+/** True once Street View imagery is confirmed for this location. */
+function useStreetView(l: Listing) {
+  const [available, setAvailable] = useState(false);
+  useEffect(() => {
+    if (!MAPS_KEY) return;
+    let active = true;
+    fetch(`https://maps.googleapis.com/maps/api/streetview/metadata?location=${l.lat},${l.lng}&source=outdoor&key=${MAPS_KEY}`)
+      .then((r) => r.json())
+      .then((d: { status?: string }) => {
+        if (active && d?.status === "OK") setAvailable(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [l.lat, l.lng]);
+  return available;
+}
+
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
+  const hasStreetView = useStreetView(l);
+  const [streetViewFailed, setStreetViewFailed] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const sv = streetViewUrl(l);
+  const useSv = Boolean(sv) && hasStreetView && !streetViewFailed;
+  const mapUrl = staticMapUrl(l);
+
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
-          src={l.image}
-          alt={`Home at ${l.address}, ${l.city}`}
+          src={useSv && sv ? sv : l.image}
+          alt={useSv ? `Street-level view of ${l.address}, ${l.city}` : `Home at ${l.address}, ${l.city}`}
           loading="lazy"
           width={1024}
           height={768}
+          onError={() => setStreetViewFailed(true)}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {l.tag && (
@@ -152,6 +195,9 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
         )}
         <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground">
           {l.daysOnMarket}d on market
+        </span>
+        <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          {useSv ? "Street View photo" : "Listing photo"}
         </span>
       </div>
       <div className="p-4">
@@ -192,6 +238,43 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
         <p className="text-sm text-muted-foreground">
           {l.city} {l.zip}
         </p>
+        {l.verified && (
+          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
+            <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+            Verified Address
+          </span>
+        )}
+        {mapUrl && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowMap((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <Map className="h-4 w-4" />
+              {showMap ? "Hide map" : "Show mini-map"}
+            </button>
+            {showMap && (
+              <img
+                src={mapUrl}
+                alt={`Map showing the location of ${l.address}, ${l.city}`}
+                loading="lazy"
+                width={600}
+                height={180}
+                className="mt-2 w-full rounded-lg border border-border object-cover"
+              />
+            )}
+          </div>
+        )}
+        <a
+          href={googleMapsLink(l)}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View on Google Maps
+        </a>
       </div>
     </article>
   );
