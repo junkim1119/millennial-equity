@@ -341,7 +341,7 @@ function Index() {
             {nearbyResults.length > 0 && (
               <div className="mt-10">
                 <h3 className="text-lg font-semibold text-foreground">
-                  Nearby in neighboring zip codes
+                  Closest listings in nearby areas
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Nothing in zip {zip}, but these homes nearby match the rest of your filters.
