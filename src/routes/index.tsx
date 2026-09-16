@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
+import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator } from "lucide-react";
 
 import listing1 from "../assets/listing-1.jpg";
 import listing2 from "../assets/listing-2.jpg";
@@ -78,13 +78,24 @@ function milesBetween(a: { lat: number; lng: number }, b: { lat: number; lng: nu
 
 
 const PRICE_MIN = 0;
-const PRICE_MAX = 3000000;
+const PRICE_MAX = 2000000;
+
+type MortgageSettings = { rate: number; downPct: number; termYears: number };
 
 function formatPrice(n: number) {
   return "$" + n.toLocaleString("en-US");
 }
 
-function ListingCard({ l }: { l: Listing }) {
+function monthlyPayment(price: number, { rate, downPct, termYears }: MortgageSettings) {
+  const principal = price * (1 - downPct / 100);
+  const n = termYears * 12;
+  const r = rate / 100 / 12;
+  if (principal <= 0) return 0;
+  if (r === 0) return principal / n;
+  return (principal * r) / (1 - Math.pow(1 + r, -n));
+}
+
+function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
   return (
     <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -107,6 +118,9 @@ function ListingCard({ l }: { l: Listing }) {
       </div>
       <div className="p-4">
         <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
+        <p className="mt-1 text-sm font-medium text-primary">
+          Est. {formatPrice(Math.round(monthlyPayment(l.price, mortgage)))}/mo
+        </p>
         <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <BedDouble className="h-4 w-4" />
@@ -149,6 +163,10 @@ function Index() {
   const [maxPrice, setMaxPrice] = useState(PRICE_MAX);
   const [minBeds, setMinBeds] = useState(0);
   const [minBaths, setMinBaths] = useState(0);
+  const [rate, setRate] = useState(6.5);
+  const [downPct, setDownPct] = useState(20);
+  const [termYears, setTermYears] = useState(30);
+  const mortgage: MortgageSettings = { rate, downPct, termYears };
 
   const results = useMemo(
     () =>
@@ -384,6 +402,71 @@ function Index() {
           </div>
         </div>
 
+        {/* Mortgage calculator */}
+        <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Calculator className="h-4 w-4" />
+            Monthly payment calculator
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Adjust these and every listing below shows its estimated monthly payment.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div>
+              <label htmlFor="rate" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Interest rate: <span className="text-foreground">{rate.toFixed(2)}%</span>
+              </label>
+              <input
+                id="rate"
+                type="range"
+                min={2}
+                max={10}
+                step={0.05}
+                value={rate}
+                onChange={(e) => setRate(Number(e.target.value))}
+                className="mt-3 w-full accent-primary"
+              />
+            </div>
+            <div>
+              <label htmlFor="down" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Down payment: <span className="text-foreground">{downPct}%</span>
+              </label>
+              <input
+                id="down"
+                type="range"
+                min={0}
+                max={50}
+                step={1}
+                value={downPct}
+                onChange={(e) => setDownPct(Number(e.target.value))}
+                className="mt-3 w-full accent-primary"
+              />
+            </div>
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Loan term</span>
+              <div className="mt-1 flex gap-1">
+                {[15, 20, 30].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setTermYears(n)}
+                    aria-pressed={termYears === n}
+                    className={`flex-1 rounded-md border px-2 py-2 text-sm font-medium transition-colors ${
+                      termYears === n
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-background text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {n} yr
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Principal and interest only. Taxes, insurance, and HOA dues are not included.
+          </p>
+        </div>
+
         <div className="mt-8 flex items-baseline justify-between">
           <h2 className="text-xl font-semibold text-foreground">
             {results.length} {results.length === 1 ? "home" : "homes"} for sale
@@ -417,7 +500,7 @@ function Index() {
 
                 <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {nearbyResults.map((l) => (
-                    <ListingCard key={l.id} l={l} />
+                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
                   ))}
                 </div>
               </div>
@@ -431,7 +514,7 @@ function Index() {
                 {relaxedNote && <p className="mt-1 text-sm text-muted-foreground">{relaxedNote}</p>}
                 <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {relaxedResults.map((l) => (
-                    <ListingCard key={l.id} l={l} />
+                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
                   ))}
                 </div>
               </div>
@@ -440,7 +523,7 @@ function Index() {
         ) : (
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {results.map((l) => (
-              <ListingCard key={l.id} l={l} />
+              <ListingCard key={l.id} l={l} mortgage={mortgage} />
             ))}
           </div>
         )}
