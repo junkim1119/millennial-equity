@@ -42,6 +42,52 @@ function formatPrice(n: number) {
   return "$" + n.toLocaleString("en-US");
 }
 
+function ListingCard({ l }: { l: Listing }) {
+  return (
+    <article className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <img
+          src={l.image}
+          alt={`Home at ${l.address}, ${l.city}`}
+          loading="lazy"
+          width={1024}
+          height={768}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        {l.tag && (
+          <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
+            {l.tag}
+          </span>
+        )}
+        <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground">
+          {l.daysOnMarket}d on market
+        </span>
+      </div>
+      <div className="p-4">
+        <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
+        <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <BedDouble className="h-4 w-4" />
+            {l.beds} bd
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Bath className="h-4 w-4" />
+            {l.baths} ba
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Ruler className="h-4 w-4" />
+            {l.sqft.toLocaleString()} sqft
+          </span>
+        </div>
+        <p className="mt-3 text-sm font-medium text-foreground">{l.address}</p>
+        <p className="text-sm text-muted-foreground">
+          {l.city} {l.zip}
+        </p>
+      </div>
+    </article>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
