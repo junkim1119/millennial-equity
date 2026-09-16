@@ -174,11 +174,15 @@ function Index() {
       const withDistance = matches
         .map((l) => ({ l, miles: milesBetween(area, l) }))
         .sort((a, b) => a.miles - b.miles);
-      const sameState = withDistance.filter((x) => x.l.state === area.state);
-      const within100 = sameState.filter((x) => x.miles <= 100);
-      const pick = within100.length > 0 ? within100 : sameState;
-      if (pick.length > 0) return pick.slice(0, 3).map((x) => x.l);
-      return withDistance.slice(0, 3).map((x) => x.l);
+      const inState = withDistance.filter((x) => x.l.state === area.state);
+      const within100 = inState.filter((x) => x.miles <= 100);
+      const ordered = [
+        ...within100,
+        ...inState.filter((x) => !within100.includes(x)),
+        ...withDistance.filter((x) => x.l.state !== area.state),
+      ];
+      return ordered.slice(0, 3).map((x) => x.l);
+
     }
     const sharedPrefix = (other: string) => {
       let n = 0;
