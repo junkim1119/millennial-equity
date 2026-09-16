@@ -15,7 +15,10 @@ type Listing = {
   price: number;
   address: string;
   city: string;
+  state: string;
   zip: string;
+  lat: number;
+  lng: number;
   beds: number;
   baths: number;
   sqft: number;
@@ -24,16 +27,55 @@ type Listing = {
 };
 
 const LISTINGS: Listing[] = [
-  { id: 1, image: listing1, price: 685000, address: "1045 Maple Crest Dr", city: "Austin, TX", zip: "78704", beds: 4, baths: 3, sqft: 2680, daysOnMarket: 3, tag: "New" },
-  { id: 2, image: listing2, price: 495000, address: "1254 Willow Bend Ln", city: "Austin, TX", zip: "78704", beds: 3, baths: 2, sqft: 1720, daysOnMarket: 9 },
-  { id: 3, image: listing3, price: 2890000, address: "88 Summit Ridge Rd", city: "Scottsdale, AZ", zip: "85251", beds: 6, baths: 7, sqft: 7400, daysOnMarket: 14, tag: "Luxury" },
-  { id: 4, image: listing4, price: 1125000, address: "1247 Beacon Hill Ave", city: "Boston, MA", zip: "02108", beds: 3, baths: 2.5, sqft: 2150, daysOnMarket: 5, tag: "New" },
-  { id: 5, image: listing5, price: 760000, address: "3285 Palo Verde Way", city: "Scottsdale, AZ", zip: "85251", beds: 3, baths: 2, sqft: 1985, daysOnMarket: 21 },
-  { id: 6, image: listing6, price: 940000, address: "17 Colonial Elm Ct", city: "Boston, MA", zip: "02108", beds: 5, baths: 4, sqft: 3420, daysOnMarket: 2, tag: "New" },
-  { id: 7, image: listing2, price: 389000, address: "903 Pecan Grove St", city: "Austin, TX", zip: "78745", beds: 2, baths: 2, sqft: 1280, daysOnMarket: 30 },
-  { id: 8, image: listing1, price: 1540000, address: "611 Ridgeview Ter", city: "Denver, CO", zip: "80206", beds: 5, baths: 4, sqft: 3980, daysOnMarket: 7 },
-  { id: 9, image: listing5, price: 525000, address: "220 Desert Sage Pl", city: "Denver, CO", zip: "80206", beds: 3, baths: 2, sqft: 1810, daysOnMarket: 11 },
+  { id: 1, image: listing1, price: 685000, address: "1045 Maple Crest Dr", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.245, lng: -97.766, beds: 4, baths: 3, sqft: 2680, daysOnMarket: 3, tag: "New" },
+  { id: 2, image: listing2, price: 495000, address: "1254 Willow Bend Ln", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.245, lng: -97.766, beds: 3, baths: 2, sqft: 1720, daysOnMarket: 9 },
+  { id: 3, image: listing3, price: 2890000, address: "88 Summit Ridge Rd", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.494, lng: -111.926, beds: 6, baths: 7, sqft: 7400, daysOnMarket: 14, tag: "Luxury" },
+  { id: 4, image: listing4, price: 1125000, address: "1247 Beacon Hill Ave", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.357, lng: -71.065, beds: 3, baths: 2.5, sqft: 2150, daysOnMarket: 5, tag: "New" },
+  { id: 5, image: listing5, price: 760000, address: "3285 Palo Verde Way", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.494, lng: -111.926, beds: 3, baths: 2, sqft: 1985, daysOnMarket: 21 },
+  { id: 6, image: listing6, price: 940000, address: "17 Colonial Elm Ct", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.357, lng: -71.065, beds: 5, baths: 4, sqft: 3420, daysOnMarket: 2, tag: "New" },
+  { id: 7, image: listing2, price: 389000, address: "903 Pecan Grove St", city: "Austin, TX", state: "TX", zip: "78745", lat: 30.208, lng: -97.798, beds: 2, baths: 2, sqft: 1280, daysOnMarket: 30 },
+  { id: 8, image: listing1, price: 1540000, address: "611 Ridgeview Ter", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.731, lng: -104.954, beds: 5, baths: 4, sqft: 3980, daysOnMarket: 7 },
+  { id: 9, image: listing5, price: 525000, address: "220 Desert Sage Pl", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.731, lng: -104.954, beds: 3, baths: 2, sqft: 1810, daysOnMarket: 11 },
+  { id: 10, image: listing4, price: 1185000, address: "412 Heights Rd", city: "Ridgewood, NJ", state: "NJ", zip: "07450", lat: 40.979, lng: -74.117, beds: 4, baths: 3, sqft: 2940, daysOnMarket: 4, tag: "New" },
+  { id: 11, image: listing1, price: 879000, address: "58 Spring Valley Rd", city: "Paramus, NJ", state: "NJ", zip: "07652", lat: 40.945, lng: -74.075, beds: 4, baths: 2.5, sqft: 2410, daysOnMarket: 12 },
+  { id: 12, image: listing6, price: 1395000, address: "915 Bloomfield Ave", city: "Montclair, NJ", state: "NJ", zip: "07042", lat: 40.812, lng: -74.223, beds: 5, baths: 4, sqft: 3380, daysOnMarket: 6, tag: "New" },
+  { id: 13, image: listing2, price: 749000, address: "230 Garden St, Unit 4B", city: "Hoboken, NJ", state: "NJ", zip: "07030", lat: 40.744, lng: -74.032, beds: 2, baths: 2, sqft: 1180, daysOnMarket: 18 },
+  { id: 14, image: listing5, price: 615000, address: "77 Newark Ave, Unit 902", city: "Jersey City, NJ", state: "NJ", zip: "07302", lat: 40.72, lng: -74.046, beds: 2, baths: 2, sqft: 1050, daysOnMarket: 25 },
+  { id: 15, image: listing3, price: 1750000, address: "14 Mount Kemble Ave", city: "Morristown, NJ", state: "NJ", zip: "07960", lat: 40.791, lng: -74.478, beds: 6, baths: 5, sqft: 4620, daysOnMarket: 9, tag: "Luxury" },
+  { id: 16, image: listing1, price: 995000, address: "302 Summit Ave", city: "Summit, NJ", state: "NJ", zip: "07901", lat: 40.715, lng: -74.36, beds: 3, baths: 2.5, sqft: 2190, daysOnMarket: 15 },
+  { id: 17, image: listing6, price: 1290000, address: "45 Prospect St", city: "White Plains, NY", state: "NY", zip: "10601", lat: 41.033, lng: -73.763, beds: 4, baths: 3, sqft: 2760, daysOnMarket: 8 },
 ];
+
+// Approximate centroid + state for a zip prefix, so unmapped zips still resolve to a region.
+const ZIP_AREAS: Record<string, { state: string; lat: number; lng: number }> = {
+  "07": { state: "NJ", lat: 40.83, lng: -74.15 },
+  "08": { state: "NJ", lat: 40.05, lng: -74.6 },
+  "10": { state: "NY", lat: 40.78, lng: -73.95 },
+  "11": { state: "NY", lat: 40.7, lng: -73.75 },
+  "12": { state: "NY", lat: 42.65, lng: -73.76 },
+  "02": { state: "MA", lat: 42.36, lng: -71.06 },
+  "78": { state: "TX", lat: 30.27, lng: -97.74 },
+  "85": { state: "AZ", lat: 33.45, lng: -112.07 },
+  "80": { state: "CO", lat: 39.74, lng: -104.99 },
+};
+
+function areaForZip(zip: string) {
+  if (zip.length < 2) return null;
+  const exact = LISTINGS.find((l) => l.zip === zip);
+  if (exact) return { state: exact.state, lat: exact.lat, lng: exact.lng };
+  return ZIP_AREAS[zip.slice(0, 2)] ?? null;
+}
+
+function milesBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 3958.8 * Math.asin(Math.sqrt(h));
+}
+
 
 const PRICE_MIN = 0;
 const PRICE_MAX = 3000000;
