@@ -470,6 +470,15 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
           <ExternalLink className="h-4 w-4" />
           View on Google Maps
         </a>
+        <button
+          type="button"
+          onClick={() => setAffordOpen(true)}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Wallet className="h-4 w-4" />
+          Can I afford this?
+        </button>
+        {affordOpen && <AffordabilityPanel l={l} onClose={() => setAffordOpen(false)} />}
       </div>
     </article>
   );
