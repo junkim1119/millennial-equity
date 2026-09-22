@@ -152,9 +152,204 @@ function googleMapsLink(l: Listing) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${l.address}, ${l.city} ${l.zip}`)}`;
 }
 
+type Verdict = { label: string; badgeClass: string };
+
+function verdictFor(ratio: number): Verdict {
+  if (ratio > 0 && ratio < 0.3) return { label: "Comfortable", badgeClass: "bg-green-500/15 text-green-700 dark:text-green-400" };
+  if (ratio > 0 && ratio <= 0.4) return { label: "Tight", badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400" };
+  return { label: "Stretch", badgeClass: "bg-red-500/15 text-red-700 dark:text-red-400" };
+}
+
+function AffordabilityPanel({ l, onClose }: { l: Listing; onClose: () => void }) {
+  const [takeHome, setTakeHome] = useState("");
+  const [studentLoan, setStudentLoan] = useState("");
+  const [people, setPeople] = useState(1);
+  const [downPayment, setDownPayment] = useState<number>(Math.round(l.price * 0.2));
+
+  const income = Math.max(Number(takeHome) || 0, 0);
+  const loan = Math.max(Number(studentLoan) || 0, 0);
+  const down = Math.min(Math.max(downPayment || 0, 0), l.price);
+
+  // Fixed assumptions: 30-year fixed at 7%
+  const mortgage = useMemo(() => {
+    const principal = l.price - down;
+    const r = 0.07 / 12;
+    const n = 360;
+    if (principal <= 0) return 0;
+    return (principal * r) / (1 - Math.pow(1 + r, -n));
+  }, [l.price, down]);
+
+  const tax = (l.price * 0.011) / 12;
+  const insurance = 160;
+  const hoa = l.hoa ?? 0;
+  const total = mortgage + tax + insurance + hoa;
+  const share = total / people;
+  const available = income - loan;
+  const ratio = income > 0 ? share / available : null;
+  const verdict = ratio === null ? null : verdictFor(ratio);
+
+  const inputClass =
+    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none";
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Affordability check for ${l.address}, ${l.city}`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-lg sm:p-6"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Can I afford this home?</h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {l.address}, {l.city} {l.zip} — {formatPrice(l.price)}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor={`income-${l.id}`} className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Monthly take-home pay
+            </label>
+            <input
+              id={`income-${l.id}`}
+              type="number"
+              min={0}
+              inputMode="decimal"
+              placeholder="e.g. 8500"
+              value={takeHome}
+              onChange={(e) => setTakeHome(e.target.value)}
+              className={`mt-1.5 ${inputClass}`}
+            />
+          </div>
+          <div>
+            <label htmlFor={`loan-${l.id}`} className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Student loan / mo <span className="normal-case">(optional)</span>
+            </label>
+            <input
+              id={`loan-${l.id}`}
+              type="number"
+              min={0}
+              inputMode="decimal"
+              placeholder="e.g. 400"
+              value={studentLoan}
+              onChange={(e) => setStudentLoan(e.target.value)}
+              className={`mt-1.5 ${inputClass}`}
+            />
+          </div>
+          <div>
+            <label htmlFor={`down-${l.id}`} className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Down payment
+            </label>
+            <input
+              id={`down-${l.id}`}
+              type="number"
+              min={0}
+              max={l.price}
+              step={1000}
+              inputMode="numeric"
+              value={downPayment}
+              onChange={(e) => setDownPayment(Number(e.target.value))}
+              className={`mt-1.5 ${inputClass}`}
+            />
+          </div>
+          <div>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">People splitting</span>
+            <div className="mt-1.5 flex gap-1">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPeople(n)}
+                  aria-pressed={people === n}
+                  className={`flex-1 rounded-md border px-2 py-2 text-sm font-medium transition-colors ${
+                    people === n
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input bg-background text-foreground hover:bg-accent"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-lg border border-border bg-background p-4">
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Mortgage (30-yr fixed, 7%)</dt>
+              <dd className="font-medium text-foreground">{formatPrice(mortgage)}/mo</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Property tax (est.)</dt>
+              <dd className="font-medium text-foreground">{formatPrice(tax)}/mo</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Home insurance (est.)</dt>
+              <dd className="font-medium text-foreground">{formatPrice(insurance)}/mo</dd>
+            </div>
+            {hoa > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">HOA fees</dt>
+                <dd className="font-medium text-foreground">{formatPrice(hoa)}/mo</dd>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-border pt-2">
+              <dt className="font-semibold text-foreground">Total monthly cost</dt>
+              <dd className="font-semibold text-foreground">{formatPrice(total)}/mo</dd>
+            </div>
+            {people > 1 && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Your share ({people} ways)</dt>
+                <dd className="font-medium text-primary">{formatPrice(share)}/mo</dd>
+              </div>
+            )}
+          </dl>
+
+          {verdict && ratio !== null ? (
+            <div className="mt-4 border-t border-border pt-4">
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${verdict.badgeClass}`}>
+                {verdict.label}
+              </span>
+              <p className="mt-2 text-sm text-muted-foreground">
+                That's about {Math.round(ratio * 100)}% of your take-home pay
+                {loan > 0 ? " after student loans" : ""}
+                {people > 1 ? ` (split ${people} ways)` : ""}.
+              </p>
+            </div>
+          ) : (
+            <p className="mt-4 border-t border-border pt-4 text-sm text-muted-foreground">
+              Enter your take-home pay above to see your verdict.
+            </p>
+          )}
+        </div>
+
+        <p className="mt-3 text-xs text-muted-foreground">
+          Estimates only — actual rates, taxes, insurance, and loan approval vary. Talk to a lender before making decisions.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
   const [media, setMedia] = useState<"photo" | "street">("photo");
   const [showMap, setShowMap] = useState(false);
+  const [affordOpen, setAffordOpen] = useState(false);
   const streetUrl = streetViewEmbedUrl(l);
   const mapUrl = mapEmbedUrl(l);
   const showStreet = media === "street" && streetUrl;
