@@ -46,8 +46,8 @@ export function InvestmentCompare({
   const data = BENCHMARKS.years.map((year, i) => ({
     year,
     home: series?.[i]?.value != null ? Math.round((series[i]?.value ?? 0) * 100) : null,
-    reit: Math.round(BENCHMARKS.reit.index[i] * 100),
-    sp: Math.round(BENCHMARKS.sp500.index[i] * 100),
+    reit: Math.round((BENCHMARKS.reit.index[i] ?? 0) * 100),
+    sp: Math.round((BENCHMARKS.sp500.index[i] ?? 0) * 100),
   }));
   return (
     <div className="mt-6 border-t border-border pt-5">
