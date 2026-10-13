@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAppreciation } from "@/lib/appreciation";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Copy, Scale } from "lucide-react";
 import { formatPrice, type Listing, type MortgageSettings } from "@/lib/listings";
@@ -11,7 +12,12 @@ export function RentVsBuy({ listing, mortgage }: { listing: Listing; mortgage: M
   const [rentIncrease, setRentIncrease] = useState(3);
   const [years, setYears] = useState(5);
   const [appreciation, setAppreciation] = useState(3);
+  const [touched, setTouched] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { lookup } = useAppreciation();
+  const appr = lookup(listing.zip);
+  useEffect(() => { setTouched(false); }, [listing.zip]);
+  useEffect(() => { if (appr && !touched) setAppreciation(appr.cagr); }, [appr?.cagr, touched]);
 
   const r = rentVsBuy(listing, mortgage, { rent: Math.max(rent || 0, 0), rentIncrease, years, appreciation });
   const hasHack = r.rentIncome > 0;
@@ -74,7 +80,8 @@ export function RentVsBuy({ listing, mortgage }: { listing: Listing; mortgage: M
         </label>
         <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Home appreciation (%/yr)
-          <input type="number" step={0.5} value={appreciation} onChange={(e) => setAppreciation(Number(e.target.value))} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+          <input type="number" step={0.1} value={appreciation} onChange={(e) => { setTouched(true); setAppreciation(Number(e.target.value)); }} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground" />
+          {appr && <span className="mt-1 block normal-case tracking-normal">Based on 2015–2025 history; past growth doesn't guarantee future growth.</span>}
         </label>
       </div>
 
