@@ -398,18 +398,28 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
       <div className="p-4">
         <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
         {(() => {
-          const pay = monthlyPayment(l.price, mortgage);
-          const net = Math.max(pay - mortgage.rentalIncome, 0);
-          const offset = pay > 0 ? Math.min((mortgage.rentalIncome / pay) * 100, 100) : 0;
+          const h = houseHack(l, mortgage);
+          const tone =
+            h.score >= 7
+              ? "bg-success text-success-foreground"
+              : h.score >= 4
+                ? "bg-warning text-warning-foreground"
+                : "bg-destructive text-destructive-foreground";
           return (
             <>
-              <p className="mt-1 text-sm font-medium text-primary">Est. {formatPrice(pay)}/mo</p>
-              {mortgage.rentalIncome > 0 && (
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {formatPrice(net)}/mo after rent
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    {Math.round(offset)}% offset
-                  </span>
+              <p className="mt-1 text-sm font-medium text-primary">True cost {formatPrice(h.cost.total)}/mo</p>
+              <p className="mt-0.5 text-sm font-semibold text-foreground">
+                After house hacking {formatPrice(h.net)}/mo
+              </p>
+              <span
+                className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}
+                title={h.spaces.map((s) => `${s.label}: ${formatPrice(s.rent)}/mo`).join(" · ") || "No rentable spaces"}
+              >
+                Hack score {h.score}/10 · covers {Math.round(h.pct)}%
+              </span>
+              {h.spaces.length > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {h.spaces.map((s) => `${s.label} ${formatPrice(s.rent)}`).join(" · ")}
                 </p>
               )}
             </>
@@ -534,6 +544,14 @@ function Index() {
       ),
     [zip, maxPrice, minBeds, minBaths]
   );
+
+  const [sortBy, setSortBy] = useState<SortKey>("newest");
+  const sortedResults = [...results].sort((a, b) => {
+    if (sortBy === "price") return a.price - b.price;
+    if (sortBy === "net") return houseHack(a, mortgage).net - houseHack(b, mortgage).net;
+    return a.daysOnMarket - b.daysOnMarket;
+  });
+  const pitiExample = sortedResults[0] ?? LISTINGS[0];
 
   const area = useMemo(() => (zip === "" ? null : areaForZip(zip)), [zip]);
 
@@ -817,8 +835,38 @@ function Index() {
               </div>
             </div>
           </div>
+          {pitiExample && (() => {
+            const c = trueCost(pitiExample, mortgage);
+            const rows: [string, number][] = [
+              ["Principal & interest", c.pi],
+              [`Property tax (${(STATE_TAX_RATE[pitiExample.state] ?? DEFAULT_TAX_RATE).toFixed(2)}%/yr, ${pitiExample.state})`, c.tax],
+              ["Homeowners insurance (0.5%/yr)", c.insurance],
+              ...(c.pmi > 0 ? ([["PMI (0.7%/yr, under 20% down)", c.pmi]] as [string, number][]) : []),
+              ...(c.hoa > 0 ? ([["HOA", c.hoa]] as [string, number][]) : []),
+            ];
+            return (
+              <div className="mt-4 rounded-lg border border-border bg-background p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Full PITI example · {pitiExample.address}, {pitiExample.city} ({formatPrice(pitiExample.price)})
+                </p>
+                <dl className="mt-2 space-y-1 text-sm">
+                  {rows.map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">{k}</dt>
+                      <dd className="font-medium text-foreground">{formatPrice(v)}/mo</dd>
+                    </div>
+                  ))}
+                  <div className="flex justify-between gap-3 border-t border-border pt-1">
+                    <dt className="font-semibold text-foreground">True cost</dt>
+                    <dd className="font-semibold text-primary">{formatPrice(c.total)}/mo</dd>
+                  </div>
+                </dl>
+              </div>
+            );
+          })()}
           <p className="mt-3 text-xs text-muted-foreground">
-            Principal and interest only. Taxes, insurance, and HOA dues are not included.
+            Every card shows the full PITI "true cost": principal & interest, property tax (estimated by state),
+            homeowners insurance, PMI when you put down less than 20%, and HOA dues where they apply.
           </p>
 
           {/* House-hacking estimator */}
@@ -1043,11 +1091,23 @@ function Index() {
           </div>
         </div>
 
-        <div className="mt-8 flex items-baseline justify-between">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-foreground">
             {results.length} {results.length === 1 ? "home" : "homes"} for sale
+            {zip && <span className="ml-2 text-sm font-normal text-muted-foreground">in zip {zip}</span>}
           </h2>
-          {zip && <span className="text-sm text-muted-foreground">in zip {zip}</span>}
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            Sort by
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+            >
+              <option value="newest">Newest</option>
+              <option value="price">Price (low to high)</option>
+              <option value="net">Net payment after house hacking</option>
+            </select>
+          </label>
         </div>
 
         {results.length === 0 ? (
@@ -1098,7 +1158,7 @@ function Index() {
           </div>
         ) : (
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((l) => (
+            {sortedResults.map((l) => (
               <ListingCard key={l.id} l={l} mortgage={mortgage} />
             ))}
           </div>
