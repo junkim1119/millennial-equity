@@ -4,6 +4,7 @@ import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculato
 import { loadBrowse, saveBrowse, AffordabilityPanel, DEFAULT_TAX_RATE, DIY_PROJECTS, HACK_EXTRAS, LISTINGS, Listing, MAPS_KEY, MortgageSettings, PRICE_MAX, PRICE_MIN, RENO_ROOMS, RENO_STYLES, RENTAL_SPACES, ROOM_RENT_BY_STATE, ROOM_RENT_BY_ZIP, RentalId, STATE_TAX_RATE, SortKey, Verdict, ZIP_AREAS, areaForZip, formatPrice, googleMapsLink, hackScore, houseHack, mapEmbedUrl, milesBetween, monthlyPayment, rentableSpaces, roomRent, streetViewEmbedUrl, trueCost, verdictFor } from "@/lib/listings";
 import { Link } from "@tanstack/react-router";
 import { RentVsBuy } from "@/components/RentVsBuy";
+import { AppreciationBadge, AppreciationBanner } from "@/lib/appreciation";
 
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
   const [media, setMedia] = useState<"photo" | "street">("photo");
@@ -86,6 +87,7 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
             </>
           );
         })()}
+        <AppreciationBadge zip={l.zip} />
         <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <BedDouble className="h-4 w-4" />
@@ -789,6 +791,7 @@ function Index() {
           </div>
         </div>
 
+        <AppreciationBanner zip={zip} />
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-foreground">
             {results.length} {results.length === 1 ? "home" : "homes"} for sale

@@ -18,6 +18,7 @@ import {
   type MortgageSettings,
 } from "@/lib/listings";
 import { RentVsBuy } from "@/components/RentVsBuy";
+import { AppreciationHistory } from "@/components/AppreciationHistory";
 
 export const Route = createFileRoute("/listing/$id")({
   loader: ({ params }) => {
@@ -204,6 +205,7 @@ function ListingDetail() {
         </div>
       ) : (
       <main className="mx-auto mt-4 grid max-w-6xl gap-6 px-4 lg:grid-cols-2">
+        <AppreciationHistory l={l} />
         {/* True monthly cost */}
         <section className="rounded-xl border border-border bg-card p-4 sm:p-6">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground"><Calculator className="h-4 w-4" /> True Monthly Cost</h2>
