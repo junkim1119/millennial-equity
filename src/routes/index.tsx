@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator, Home, Hammer, Wrench, PaintRoller, BadgeCheck, Map as MapIcon, ExternalLink, Wallet } from "lucide-react";
-import { AffordabilityPanel, DEFAULT_TAX_RATE, DIY_PROJECTS, HACK_EXTRAS, LISTINGS, Listing, MAPS_KEY, MortgageSettings, PRICE_MAX, PRICE_MIN, RENO_ROOMS, RENO_STYLES, RENTAL_SPACES, ROOM_RENT_BY_STATE, ROOM_RENT_BY_ZIP, RentalId, STATE_TAX_RATE, SortKey, Verdict, ZIP_AREAS, areaForZip, formatPrice, googleMapsLink, hackScore, houseHack, mapEmbedUrl, milesBetween, monthlyPayment, rentableSpaces, roomRent, streetViewEmbedUrl, trueCost, verdictFor } from "@/lib/listings";
+import { loadBrowse, saveBrowse, AffordabilityPanel, DEFAULT_TAX_RATE, DIY_PROJECTS, HACK_EXTRAS, LISTINGS, Listing, MAPS_KEY, MortgageSettings, PRICE_MAX, PRICE_MIN, RENO_ROOMS, RENO_STYLES, RENTAL_SPACES, ROOM_RENT_BY_STATE, ROOM_RENT_BY_ZIP, RentalId, STATE_TAX_RATE, SortKey, Verdict, ZIP_AREAS, areaForZip, formatPrice, googleMapsLink, hackScore, houseHack, mapEmbedUrl, milesBetween, monthlyPayment, rentableSpaces, roomRent, streetViewEmbedUrl, trueCost, verdictFor } from "@/lib/listings";
 import { Link } from "@tanstack/react-router";
 
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
@@ -183,6 +183,14 @@ function Index() {
   const rentalIncome = RENTAL_SPACES.reduce((sum, s) => sum + (rentals[s.id] ? rentAmounts[s.id] : 0), 0);
   const mortgage: MortgageSettings = { rate, downPct, termYears, rentalIncome };
 
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    const b = loadBrowse();
+    setZip(b.zip); setMaxPrice(b.maxPrice); setMinBeds(b.minBeds); setMinBaths(b.minBaths);
+    setRate(b.rate); setDownPct(b.downPct); setTermYears(b.termYears); setSortBy(b.sortBy);
+    setRestored(true);
+  }, []);
+
   const [renoRoom, setRenoRoom] = useState<(typeof RENO_ROOMS)[number]["id"]>("kitchen");
   const [renoStyle, setRenoStyle] = useState<(typeof RENO_STYLES)[number]["id"]>("boho");
   const [renoOpen, setRenoOpen] = useState(false);
@@ -209,6 +217,9 @@ function Index() {
     if (sortBy === "net") return houseHack(a, mortgage).net - houseHack(b, mortgage).net;
     return a.daysOnMarket - b.daysOnMarket;
   });
+  useEffect(() => {
+    if (restored) saveBrowse({ zip, maxPrice, minBeds, minBaths, rate, downPct, termYears, sortBy });
+  }, [restored, zip, maxPrice, minBeds, minBaths, rate, downPct, termYears, sortBy]);
   const pitiExample = sortedResults[0] ?? LISTINGS[0];
 
   const area = useMemo(() => (zip === "" ? null : areaForZip(zip)), [zip]);

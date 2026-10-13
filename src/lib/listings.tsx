@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X, Wallet } from "lucide-react";
 import listing1 from "@/assets/listing-1.jpg";
 import listing2 from "@/assets/listing-2.jpg";
@@ -403,3 +403,24 @@ export function AffordabilityPanel({ l, onClose }: { l: Listing; onClose: () => 
   );
 }
 
+
+// ---- Shared browse state (filters + calculator), kept for the session so detail pages and "Back" stay in sync ----
+export type BrowseState = {
+  zip: string; maxPrice: number; minBeds: number; minBaths: number;
+  rate: number; downPct: number; termYears: number; sortBy: SortKey;
+};
+export const DEFAULT_BROWSE: BrowseState = {
+  zip: "", maxPrice: PRICE_MAX, minBeds: 0, minBaths: 0, rate: 6.5, downPct: 20, termYears: 30, sortBy: "newest",
+};
+const BROWSE_KEY = "mhh-browse";
+export function loadBrowse(): BrowseState {
+  if (typeof window === "undefined") return DEFAULT_BROWSE;
+  try {
+    return { ...DEFAULT_BROWSE, ...JSON.parse(sessionStorage.getItem(BROWSE_KEY) || "{}") };
+  } catch {
+    return DEFAULT_BROWSE;
+  }
+}
+export function saveBrowse(s: BrowseState) {
+  try { sessionStorage.setItem(BROWSE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
