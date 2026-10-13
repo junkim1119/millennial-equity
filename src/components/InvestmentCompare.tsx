@@ -45,7 +45,7 @@ export function InvestmentCompare({
   const lev = leveragedReturn(price, homeTotal, downPct);
   const data = BENCHMARKS.years.map((year, i) => ({
     year,
-    home: series?.[i]?.value != null ? Math.round(series[i].value! * 100) : null,
+    home: series?.[i]?.value != null ? Math.round((series[i]?.value ?? 0) * 100) : null,
     reit: Math.round(BENCHMARKS.reit.index[i] * 100),
     sp: Math.round(BENCHMARKS.sp500.index[i] * 100),
   }));
