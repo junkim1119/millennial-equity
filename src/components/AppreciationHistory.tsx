@@ -1,9 +1,10 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TrendingUp } from "lucide-react";
 import { formatPrice, type Listing } from "@/lib/listings";
+import { InvestmentCompare } from "@/components/InvestmentCompare";
 import { SOURCE_NOTE, Skeleton, useAppreciation, useHistory } from "@/lib/appreciation";
 
-export function AppreciationHistory({ l }: { l: Listing }) {
+export function AppreciationHistory({ l, downPct, onOpenRentVsBuy }: { l: Listing; downPct: number; onOpenRentVsBuy: () => void }) {
   const { status, lookup } = useAppreciation();
   const hist = useHistory(l.zip);
   if (status === "error") return null;
@@ -39,6 +40,7 @@ export function AppreciationHistory({ l }: { l: Listing }) {
             ) : <p className="text-sm text-muted-foreground">Yearly history unavailable for this area.</p>}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">Index, 2015 = 100. {SOURCE_NOTE}</p>
+          <InvestmentCompare zip={l.zip} homeCagr={a.cagr} homeTotal={a.total} price={l.price} downPct={downPct} series={hist.series} onOpenRentVsBuy={() => { onOpenRentVsBuy(); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
         </>
       )}
     </section>

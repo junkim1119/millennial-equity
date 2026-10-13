@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CompactCompare } from "@/components/InvestmentCompare";
 
 type ApprData = {
   zip: Record<string, [number, number]>;
@@ -111,6 +112,7 @@ export function AppreciationBanner({ zip }: { zip: string }) {
           : "Appreciation data unavailable."}
       </p>
       {a && <p className="mt-1 text-xs text-muted-foreground">{SOURCE_NOTE}</p>}
+      {a && <CompactCompare zip={zip} homeCagr={a.cagr} />}
     </div>
   );
 }
