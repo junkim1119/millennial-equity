@@ -26,29 +26,22 @@ type Listing = {
   tag?: string;
   verified?: boolean;
   hoa?: number;
+  basement?: boolean;
+  adu?: boolean;
+};
+
+// Rentable extras per listing (finished basement / ADU or convertible garage)
+const HACK_EXTRAS: Record<number, { basement?: boolean; adu?: boolean }> = {
+  1: { adu: true }, 2: { adu: true }, 4: { basement: true }, 6: { basement: true }, 8: { basement: true, adu: true },
+  9: { basement: true }, 10: { basement: true }, 11: { basement: true }, 12: { basement: true, adu: true },
+  15: { basement: true, adu: true }, 16: { basement: true }, 17: { basement: true }, 5: { adu: true },
 };
 
 // Coordinates and addresses below were confirmed with the Google Maps Geocoding API
 // (street-level rooftop or interpolated match), so every listing shows a Verified Address badge.
-const LISTINGS: Listing[] = [
-  { id: 1, image: listing1, price: 685000, address: "1045 S 5th St", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.2554333, lng: -97.7572973, beds: 4, baths: 3, sqft: 2680, daysOnMarket: 3, tag: "New", verified: true },
-  { id: 2, image: listing2, price: 495000, address: "1254 Newning Ave", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.2505005, lng: -97.7439042, beds: 3, baths: 2, sqft: 1720, daysOnMarket: 9, verified: true },
-  { id: 3, image: listing3, price: 2890000, address: "6801 N 74th St", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.5046857, lng: -111.9218719, beds: 6, baths: 7, sqft: 7400, daysOnMarket: 14, tag: "Luxury", verified: true },
-  { id: 4, image: listing4, price: 1125000, address: "45 Beacon St", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.3569118, lng: -71.0670806, beds: 3, baths: 2.5, sqft: 2150, daysOnMarket: 5, tag: "New", verified: true },
-  { id: 5, image: listing5, price: 760000, address: "3285 N 68th St", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.4852678, lng: -111.934758, beds: 3, baths: 2, sqft: 1985, daysOnMarket: 21, verified: true },
-  { id: 6, image: listing6, price: 940000, address: "17 Chestnut St", city: "Boston, MA", state: "MA", zip: "02108", lat: 42.357784, lng: -71.0670711, beds: 5, baths: 4, sqft: 3420, daysOnMarket: 2, tag: "New", verified: true },
-  { id: 7, image: listing2, price: 389000, address: "903 Pecan Grove Rd", city: "Austin, TX", state: "TX", zip: "78745", lat: 30.2488936, lng: -97.7423255, beds: 2, baths: 2, sqft: 1280, daysOnMarket: 30, verified: true },
-  { id: 8, image: listing1, price: 1540000, address: "611 Detroit St", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.725891, lng: -104.9547168, beds: 5, baths: 4, sqft: 3980, daysOnMarket: 7, verified: true },
-  { id: 9, image: listing5, price: 525000, address: "220 Adams St", city: "Denver, CO", state: "CO", zip: "80206", lat: 39.7199215, lng: -104.9483451, beds: 3, baths: 2, sqft: 1810, daysOnMarket: 11, verified: true },
-  { id: 10, image: listing4, price: 1185000, address: "412 Heights Rd", city: "Ridgewood, NJ", state: "NJ", zip: "07450", lat: 40.9922055, lng: -74.1204896, beds: 4, baths: 3, sqft: 2940, daysOnMarket: 4, tag: "New", verified: true },
-  { id: 11, image: listing1, price: 879000, address: "58 Spring Valley Rd", city: "Paramus, NJ", state: "NJ", zip: "07652", lat: 40.9218133, lng: -74.0598417, beds: 4, baths: 2.5, sqft: 2410, daysOnMarket: 12, verified: true },
-  { id: 12, image: listing6, price: 1395000, address: "915 Bloomfield Ave", city: "Montclair, NJ", state: "NJ", zip: "07042", lat: 40.8041039, lng: -74.2068673, beds: 5, baths: 4, sqft: 3380, daysOnMarket: 6, tag: "New", verified: true },
-  { id: 13, image: listing2, price: 749000, address: "230 Garden St, Unit 4B", city: "Hoboken, NJ", state: "NJ", zip: "07030", lat: 40.739943, lng: -74.0322387, beds: 2, baths: 2, sqft: 1180, daysOnMarket: 18, verified: true, hoa: 450 },
-  { id: 14, image: listing5, price: 615000, address: "177 Newark Ave, Unit 902", city: "Jersey City, NJ", state: "NJ", zip: "07302", lat: 40.7209809, lng: -74.0455105, beds: 2, baths: 2, sqft: 1050, daysOnMarket: 25, verified: true, hoa: 520 },
-  { id: 15, image: listing3, price: 1750000, address: "14 Mt Kemble Ave", city: "Morristown, NJ", state: "NJ", zip: "07960", lat: 40.7936835, lng: -74.4847224, beds: 6, baths: 5, sqft: 4620, daysOnMarket: 9, tag: "Luxury", verified: true },
-  { id: 16, image: listing1, price: 995000, address: "302 Summit Ave", city: "Summit, NJ", state: "NJ", zip: "07901", lat: 40.7313373, lng: -74.3564501, beds: 3, baths: 2.5, sqft: 2190, daysOnMarket: 15, verified: true },
-  { id: 17, image: listing6, price: 1290000, address: "45 Prospect St", city: "White Plains, NY", state: "NY", zip: "10601", lat: 41.0203901, lng: -73.7690274, beds: 4, baths: 3, sqft: 2760, daysOnMarket: 8, verified: true },
-];
+const LISTINGS: Listing[] = ([
+...
+] as Listing[]).map((l) => ({ ...l, ...HACK_EXTRAS[l.id] }));
 
 // Approximate centroid + state for a zip prefix, so unmapped zips still resolve to a region.
 const ZIP_AREAS: Record<string, { state: string; lat: number; lng: number }> = {
@@ -97,6 +90,56 @@ function monthlyPayment(price: number, { rate, downPct, termYears }: MortgageSet
   if (principal <= 0) return 0;
   if (r === 0) return principal / n;
   return (principal * r) / (1 - Math.pow(1 + r, -n));
+}
+
+// ---- Full PITI ----
+const STATE_TAX_RATE: Record<string, number> = { NJ: 2.23, TX: 1.6, NY: 1.4, MA: 1.1, AZ: 0.6, CO: 0.5 };
+const DEFAULT_TAX_RATE = 1.1;
+
+function trueCost(l: Listing, s: MortgageSettings) {
+  const pi = monthlyPayment(l.price, s);
+  const tax = (l.price * (STATE_TAX_RATE[l.state] ?? DEFAULT_TAX_RATE)) / 100 / 12;
+  const insurance = (l.price * 0.005) / 12;
+  const loan = l.price * (1 - s.downPct / 100);
+  const pmi = s.downPct < 20 ? (loan * 0.007) / 12 : 0;
+  const hoa = l.hoa ?? 0;
+  return { pi, tax, insurance, pmi, hoa, total: pi + tax + insurance + pmi + hoa };
+}
+
+// ---- House-Hack Score ----
+type SortKey = "newest" | "price" | "net";
+
+// Typical rent for one room, by zip prefix (falls back to state, then national).
+const ROOM_RENT_BY_ZIP: Record<string, number> = {
+  "07030": 1500, "07302": 1400, "07042": 1100, "07450": 1100, "07652": 1050, "07960": 1050, "07901": 1150,
+  "10601": 1200, "02108": 1600, "78704": 1000, "78745": 850, "85251": 950, "80206": 1050,
+};
+const ROOM_RENT_BY_STATE: Record<string, number> = { NJ: 1100, NY: 1200, MA: 1400, TX: 900, AZ: 900, CO: 1000 };
+
+function roomRent(l: Listing) {
+  return ROOM_RENT_BY_ZIP[l.zip] ?? ROOM_RENT_BY_STATE[l.state] ?? 900;
+}
+
+function rentableSpaces(l: Listing) {
+  const room = roomRent(l);
+  const spaces: { label: string; rent: number }[] = [];
+  const spare = Math.max(l.beds - 1, 0);
+  if (spare > 0) spaces.push({ label: `${spare} spare bedroom${spare > 1 ? "s" : ""}`, rent: spare * room });
+  if (l.basement) spaces.push({ label: "Finished basement", rent: Math.round(room * 1.5) });
+  if (l.adu) spaces.push({ label: "ADU / garage", rent: Math.round(room * 1.9) });
+  return spaces;
+}
+
+export function hackScore(pct: number) {
+  return Math.min(10, Math.max(1, Math.ceil(pct / 8)));
+}
+
+function houseHack(l: Listing, s: MortgageSettings) {
+  const cost = trueCost(l, s);
+  const spaces = rentableSpaces(l);
+  const rent = spaces.reduce((sum, x) => sum + x.rent, 0);
+  const pct = cost.total > 0 ? Math.min((rent / cost.total) * 100, 100) : 0;
+  return { cost, spaces, rent, net: Math.max(cost.total - rent, 0), pct, score: hackScore(pct) };
 }
 
 // House-hacking: rentable spaces a young buyer could lease out
@@ -401,10 +444,10 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
           const h = houseHack(l, mortgage);
           const tone =
             h.score >= 7
-              ? "bg-success text-success-foreground"
+              ? "bg-green-500/15 text-green-700 dark:text-green-400"
               : h.score >= 4
-                ? "bg-warning text-warning-foreground"
-                : "bg-destructive text-destructive-foreground";
+                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                : "bg-red-500/15 text-red-700 dark:text-red-400";
           return (
             <>
               <p className="mt-1 text-sm font-medium text-primary">True cost {formatPrice(h.cost.total)}/mo</p>
