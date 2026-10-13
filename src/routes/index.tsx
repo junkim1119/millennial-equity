@@ -26,11 +26,20 @@ type Listing = {
   tag?: string;
   verified?: boolean;
   hoa?: number;
+  basement?: boolean;
+  adu?: boolean;
+};
+
+// Rentable extras per listing (finished basement / ADU or convertible garage)
+const HACK_EXTRAS: Record<number, { basement?: boolean; adu?: boolean }> = {
+  1: { adu: true }, 2: { adu: true }, 4: { basement: true }, 6: { basement: true }, 8: { basement: true, adu: true },
+  9: { basement: true }, 10: { basement: true }, 11: { basement: true }, 12: { basement: true, adu: true },
+  15: { basement: true, adu: true }, 16: { basement: true }, 17: { basement: true }, 5: { adu: true },
 };
 
 // Coordinates and addresses below were confirmed with the Google Maps Geocoding API
 // (street-level rooftop or interpolated match), so every listing shows a Verified Address badge.
-const LISTINGS: Listing[] = [
+const LISTINGS: Listing[] = ([
   { id: 1, image: listing1, price: 685000, address: "1045 S 5th St", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.2554333, lng: -97.7572973, beds: 4, baths: 3, sqft: 2680, daysOnMarket: 3, tag: "New", verified: true },
   { id: 2, image: listing2, price: 495000, address: "1254 Newning Ave", city: "Austin, TX", state: "TX", zip: "78704", lat: 30.2505005, lng: -97.7439042, beds: 3, baths: 2, sqft: 1720, daysOnMarket: 9, verified: true },
   { id: 3, image: listing3, price: 2890000, address: "6801 N 74th St", city: "Scottsdale, AZ", state: "AZ", zip: "85251", lat: 33.5046857, lng: -111.9218719, beds: 6, baths: 7, sqft: 7400, daysOnMarket: 14, tag: "Luxury", verified: true },
@@ -48,7 +57,7 @@ const LISTINGS: Listing[] = [
   { id: 15, image: listing3, price: 1750000, address: "14 Mt Kemble Ave", city: "Morristown, NJ", state: "NJ", zip: "07960", lat: 40.7936835, lng: -74.4847224, beds: 6, baths: 5, sqft: 4620, daysOnMarket: 9, tag: "Luxury", verified: true },
   { id: 16, image: listing1, price: 995000, address: "302 Summit Ave", city: "Summit, NJ", state: "NJ", zip: "07901", lat: 40.7313373, lng: -74.3564501, beds: 3, baths: 2.5, sqft: 2190, daysOnMarket: 15, verified: true },
   { id: 17, image: listing6, price: 1290000, address: "45 Prospect St", city: "White Plains, NY", state: "NY", zip: "10601", lat: 41.0203901, lng: -73.7690274, beds: 4, baths: 3, sqft: 2760, daysOnMarket: 8, verified: true },
-];
+] as Listing[]).map((l) => ({ ...l, ...HACK_EXTRAS[l.id] }));
 
 // Approximate centroid + state for a zip prefix, so unmapped zips still resolve to a region.
 const ZIP_AREAS: Record<string, { state: string; lat: number; lng: number }> = {
@@ -97,6 +106,56 @@ function monthlyPayment(price: number, { rate, downPct, termYears }: MortgageSet
   if (principal <= 0) return 0;
   if (r === 0) return principal / n;
   return (principal * r) / (1 - Math.pow(1 + r, -n));
+}
+
+// ---- Full PITI ----
+const STATE_TAX_RATE: Record<string, number> = { NJ: 2.23, TX: 1.6, NY: 1.4, MA: 1.1, AZ: 0.6, CO: 0.5 };
+const DEFAULT_TAX_RATE = 1.1;
+
+function trueCost(l: Listing, s: MortgageSettings) {
+  const pi = monthlyPayment(l.price, s);
+  const tax = (l.price * (STATE_TAX_RATE[l.state] ?? DEFAULT_TAX_RATE)) / 100 / 12;
+  const insurance = (l.price * 0.005) / 12;
+  const loan = l.price * (1 - s.downPct / 100);
+  const pmi = s.downPct < 20 ? (loan * 0.007) / 12 : 0;
+  const hoa = l.hoa ?? 0;
+  return { pi, tax, insurance, pmi, hoa, total: pi + tax + insurance + pmi + hoa };
+}
+
+// ---- House-Hack Score ----
+type SortKey = "newest" | "price" | "net";
+
+// Typical rent for one room, by zip prefix (falls back to state, then national).
+const ROOM_RENT_BY_ZIP: Record<string, number> = {
+  "07030": 1500, "07302": 1400, "07042": 1100, "07450": 1100, "07652": 1050, "07960": 1050, "07901": 1150,
+  "10601": 1200, "02108": 1600, "78704": 1000, "78745": 850, "85251": 950, "80206": 1050,
+};
+const ROOM_RENT_BY_STATE: Record<string, number> = { NJ: 1100, NY: 1200, MA: 1400, TX: 900, AZ: 900, CO: 1000 };
+
+function roomRent(l: Listing) {
+  return ROOM_RENT_BY_ZIP[l.zip] ?? ROOM_RENT_BY_STATE[l.state] ?? 900;
+}
+
+function rentableSpaces(l: Listing) {
+  const room = roomRent(l);
+  const spaces: { label: string; rent: number }[] = [];
+  const spare = Math.max(l.beds - 1, 0);
+  if (spare > 0) spaces.push({ label: `${spare} spare bedroom${spare > 1 ? "s" : ""}`, rent: spare * room });
+  if (l.basement) spaces.push({ label: "Finished basement", rent: Math.round(room * 1.5) });
+  if (l.adu) spaces.push({ label: "ADU / garage", rent: Math.round(room * 1.9) });
+  return spaces;
+}
+
+function hackScore(pct: number) {
+  return Math.min(10, Math.max(1, Math.ceil(pct / 8)));
+}
+
+function houseHack(l: Listing, s: MortgageSettings) {
+  const cost = trueCost(l, s);
+  const spaces = rentableSpaces(l);
+  const rent = spaces.reduce((sum, x) => sum + x.rent, 0);
+  const pct = cost.total > 0 ? Math.min((rent / cost.total) * 100, 100) : 0;
+  return { cost, spaces, rent, net: Math.max(cost.total - rent, 0), pct, score: hackScore(pct) };
 }
 
 // House-hacking: rentable spaces a young buyer could lease out
@@ -398,18 +457,28 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
       <div className="p-4">
         <p className="text-2xl font-bold text-foreground">{formatPrice(l.price)}</p>
         {(() => {
-          const pay = monthlyPayment(l.price, mortgage);
-          const net = Math.max(pay - mortgage.rentalIncome, 0);
-          const offset = pay > 0 ? Math.min((mortgage.rentalIncome / pay) * 100, 100) : 0;
+          const h = houseHack(l, mortgage);
+          const tone =
+            h.score >= 7
+              ? "bg-green-500/15 text-green-700 dark:text-green-400"
+              : h.score >= 4
+                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                : "bg-red-500/15 text-red-700 dark:text-red-400";
           return (
             <>
-              <p className="mt-1 text-sm font-medium text-primary">Est. {formatPrice(pay)}/mo</p>
-              {mortgage.rentalIncome > 0 && (
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {formatPrice(net)}/mo after rent
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    {Math.round(offset)}% offset
-                  </span>
+              <p className="mt-1 text-sm font-medium text-primary">True cost {formatPrice(h.cost.total)}/mo</p>
+              <p className="mt-0.5 text-sm font-semibold text-foreground">
+                After house hacking {formatPrice(h.net)}/mo
+              </p>
+              <span
+                className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}
+                title={h.spaces.map((s) => `${s.label}: ${formatPrice(s.rent)}/mo`).join(" · ") || "No rentable spaces"}
+              >
+                Hack score {h.score}/10 · covers {Math.round(h.pct)}%
+              </span>
+              {h.spaces.length > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {h.spaces.map((s) => `${s.label} ${formatPrice(s.rent)}`).join(" · ")}
                 </p>
               )}
             </>
@@ -534,6 +603,14 @@ function Index() {
       ),
     [zip, maxPrice, minBeds, minBaths]
   );
+
+  const [sortBy, setSortBy] = useState<SortKey>("newest");
+  const sortedResults = [...results].sort((a, b) => {
+    if (sortBy === "price") return a.price - b.price;
+    if (sortBy === "net") return houseHack(a, mortgage).net - houseHack(b, mortgage).net;
+    return a.daysOnMarket - b.daysOnMarket;
+  });
+  const pitiExample = sortedResults[0] ?? LISTINGS[0];
 
   const area = useMemo(() => (zip === "" ? null : areaForZip(zip)), [zip]);
 
@@ -817,8 +894,38 @@ function Index() {
               </div>
             </div>
           </div>
+          {pitiExample && (() => {
+            const c = trueCost(pitiExample, mortgage);
+            const rows: [string, number][] = [
+              ["Principal & interest", c.pi],
+              [`Property tax (${(STATE_TAX_RATE[pitiExample.state] ?? DEFAULT_TAX_RATE).toFixed(2)}%/yr, ${pitiExample.state})`, c.tax],
+              ["Homeowners insurance (0.5%/yr)", c.insurance],
+              ...(c.pmi > 0 ? ([["PMI (0.7%/yr, under 20% down)", c.pmi]] as [string, number][]) : []),
+              ...(c.hoa > 0 ? ([["HOA", c.hoa]] as [string, number][]) : []),
+            ];
+            return (
+              <div className="mt-4 rounded-lg border border-border bg-background p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Full PITI example · {pitiExample.address}, {pitiExample.city} ({formatPrice(pitiExample.price)})
+                </p>
+                <dl className="mt-2 space-y-1 text-sm">
+                  {rows.map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">{k}</dt>
+                      <dd className="font-medium text-foreground">{formatPrice(v)}/mo</dd>
+                    </div>
+                  ))}
+                  <div className="flex justify-between gap-3 border-t border-border pt-1">
+                    <dt className="font-semibold text-foreground">True cost</dt>
+                    <dd className="font-semibold text-primary">{formatPrice(c.total)}/mo</dd>
+                  </div>
+                </dl>
+              </div>
+            );
+          })()}
           <p className="mt-3 text-xs text-muted-foreground">
-            Principal and interest only. Taxes, insurance, and HOA dues are not included.
+            Every card shows the full PITI "true cost": principal & interest, property tax (estimated by state),
+            homeowners insurance, PMI when you put down less than 20%, and HOA dues where they apply.
           </p>
 
           {/* House-hacking estimator */}
@@ -876,8 +983,8 @@ function Index() {
               {rentalIncome > 0 ? (
                 <>
                   Estimated rental income:{" "}
-                  <span className="font-semibold">{formatPrice(rentalIncome)}/mo</span>. Every listing below now shows
-                  its net payment and how much of the mortgage is offset.
+                  <span className="font-semibold">{formatPrice(rentalIncome)}/mo</span>. This is your custom scenario; each card also shows its own
+                  House-Hack Score based on its rentable spaces and local rents.
                 </>
               ) : (
                 <span className="text-muted-foreground">Select a rentable space to see your reduced net payment.</span>
@@ -1043,11 +1150,23 @@ function Index() {
           </div>
         </div>
 
-        <div className="mt-8 flex items-baseline justify-between">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-foreground">
             {results.length} {results.length === 1 ? "home" : "homes"} for sale
+            {zip && <span className="ml-2 text-sm font-normal text-muted-foreground">in zip {zip}</span>}
           </h2>
-          {zip && <span className="text-sm text-muted-foreground">in zip {zip}</span>}
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            Sort by
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+            >
+              <option value="newest">Newest</option>
+              <option value="price">Price (low to high)</option>
+              <option value="net">Net payment after house hacking</option>
+            </select>
+          </label>
         </div>
 
         {results.length === 0 ? (
@@ -1098,7 +1217,7 @@ function Index() {
           </div>
         ) : (
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {results.map((l) => (
+            {sortedResults.map((l) => (
               <ListingCard key={l.id} l={l} mortgage={mortgage} />
             ))}
           </div>
