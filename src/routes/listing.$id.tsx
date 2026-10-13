@@ -28,7 +28,7 @@ export const Route = createFileRoute("/listing/$id")({
   },
   head: ({ loaderData }) => {
     const l = loaderData?.listing;
-    const title = l ? `${l.address}, ${l.city} — ${formatPrice(l.price)} | MillenialHomeHunt` : "Listing unavailable | MillenialHomeHunt";
+    const title = l ? `${l.address}, ${l.city} — ${formatPrice(l.price)} | MillennialEquity` : "Listing unavailable | MillennialEquity";
     const description = l
       ? `${l.beds} bd · ${l.baths} ba · ${l.sqft.toLocaleString()} sqft in ${l.city}. See true monthly cost, house-hack potential, and DIY fixer upside.`
       : "This listing could not be found.";

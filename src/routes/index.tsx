@@ -166,10 +166,10 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MillenialHomeHunt — Find Homes for Sale by Zip Code" },
-      { name: "description", content: "Find homes tailored for young homeowners. Search listings by zip code, estimate mortgage and house-hacking payments, and compare DIY vs. pro renovation costs." },
-      { property: "og:title", content: "MillenialHomeHunt — Find Homes for Sale by Zip Code" },
-      { property: "og:description", content: "Find homes tailored for young homeowners. Search listings by zip code, estimate mortgage and house-hacking payments, and compare DIY vs. pro renovation costs." },
+      { title: "MillennialEquity — Your First Home, Your First Real Estate Investment" },
+      { name: "description", content: "Your first home, your first real estate investment. Search listings by zip code, estimate mortgage and house-hacking payments, and compare DIY vs. pro renovation costs." },
+      { property: "og:title", content: "MillennialEquity — Your First Home, Your First Real Estate Investment" },
+      { property: "og:description", content: "Your first home, your first real estate investment. Search listings by zip code, estimate mortgage and house-hacking payments, and compare DIY vs. pro renovation costs." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -320,7 +320,7 @@ function Index() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
             <MapPin className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold tracking-tight">MillenialHomeHunt</span>
+            <span className="text-xl font-bold tracking-tight">MillennialEquity</span>
           </div>
           <a
             href="#listings"
@@ -335,7 +335,7 @@ function Index() {
       <section className="bg-secondary">
         <div className="mx-auto max-w-6xl px-4 py-16 text-center sm:py-24">
           <h1 className="mx-auto max-w-2xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Finding the right home for young homeowners
+            Your first home, your first real estate investment
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
             More customized, more hacking, more DIY.
@@ -870,7 +870,7 @@ function Index() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-8 text-center">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            <span className="font-bold text-foreground">MillenialHomeHunt</span>
+            <span className="font-bold text-foreground">MillennialEquity</span>
           </div>
           <p className="text-sm text-muted-foreground">Demo listings shown for illustration. Contact us for live MLS data.</p>
         </div>
