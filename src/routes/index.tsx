@@ -456,6 +456,100 @@ function Index() {
           </div>
         </div>
 
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold text-foreground">
+            {results.length} {results.length === 1 ? "home" : "homes"} for sale
+            {zip && <span className="ml-2 text-sm font-normal text-muted-foreground">in zip {zip}</span>}
+          </h2>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            Sort by
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+            >
+              <option value="newest">Newest</option>
+              <option value="price">Price (low to high)</option>
+              <option value="net">Net payment after house hacking</option>
+            </select>
+          </label>
+        </div>
+
+        {results.length === 0 ? (
+          <div className="mt-8">
+            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <p className="text-lg font-medium text-foreground">No homes match your filters</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Try widening the price range or clearing the zip code.
+              </p>
+              <button
+                onClick={clearFilters}
+                className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Reset filters
+              </button>
+            </div>
+
+            {nearbyResults.length > 0 && (
+              <div className="mt-10">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Closest listings in nearby areas
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {nearbyNote || `Nothing in zip ${zip}, but these homes nearby match the rest of your filters.`}
+                </p>
+
+                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {nearbyResults.map((l) => (
+                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {nearbyResults.length === 0 && relaxedResults.length > 0 && (
+              <div className="mt-10">
+                <h3 className="text-lg font-semibold text-foreground">
+                  Close matches with relaxed criteria
+                </h3>
+                {relaxedNote && <p className="mt-1 text-sm text-muted-foreground">{relaxedNote}</p>}
+                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {relaxedResults.map((l) => (
+                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {sortedResults.map((l) => (
+              <ListingCard key={l.id} l={l} mortgage={mortgage} />
+            ))}
+          </div>
+        )}
+
+        {/* Rent vs. Buy */}
+        <div className="mt-6">
+          <label className="mb-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            Compare against
+            <select
+              value={rvbId ?? pitiExample.id}
+              onChange={(e) => setRvbId(Number(e.target.value))}
+              className="max-w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+            >
+              {LISTINGS.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.address}, {x.city} — {formatPrice(x.price)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <RentVsBuy listing={LISTINGS.find((x) => x.id === (rvbId ?? pitiExample.id)) ?? pitiExample} mortgage={mortgage} />
+        </div>
+
+        <AppreciationBanner zip={zip} />
+
         {/* Mortgage calculator */}
         <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -615,23 +709,53 @@ function Index() {
           </div>
         </div>
 
-        {/* Rent vs. Buy */}
-        <div className="mt-6">
-          <label className="mb-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            Compare against
-            <select
-              value={rvbId ?? pitiExample.id}
-              onChange={(e) => setRvbId(Number(e.target.value))}
-              className="max-w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
-            >
-              {LISTINGS.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.address}, {x.city} — {formatPrice(x.price)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <RentVsBuy listing={LISTINGS.find((x) => x.id === (rvbId ?? pitiExample.id)) ?? pitiExample} mortgage={mortgage} />
+        {/* DIY vs Pro */}
+        <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Hammer className="h-4 w-4" />
+            DIY vs. Pro difficulty ratings
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Common fixes ranked by how DIY-friendly they are, with the sweat equity you keep by doing it yourself.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {DIY_PROJECTS.map((p) => {
+              const proOnly = p.diy === 0;
+              const savings = proOnly ? 0 : p.pro - p.diy;
+              return (
+                <div key={p.project} className="rounded-lg border border-border bg-background p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground">{p.project}</p>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        proOnly ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
+                      }`}
+                    >
+                      {p.difficulty}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1" aria-label={`DIY friendliness ${p.score} of 10`}>
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full ${i < p.score ? "bg-primary" : "bg-secondary"}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Wrench className="h-4 w-4" />
+                      DIY {proOnly ? "n/a" : formatPrice(p.diy)}
+                    </span>
+                    <span>Pro {formatPrice(p.pro)}</span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-foreground">
+                    {proOnly ? "Hire a licensed pro — not a safe DIY job." : `Sweat equity saved: ${formatPrice(savings)}`}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Renovation cost estimator */}
@@ -739,129 +863,6 @@ function Index() {
                 Ballpark ranges for a typical mid-size room. Local labor rates and permits can shift totals.
               </p>
             </div>
-          </div>
-        )}
-
-        {/* DIY vs Pro */}
-        <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Hammer className="h-4 w-4" />
-            DIY vs. Pro difficulty ratings
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Common fixes ranked by how DIY-friendly they are, with the sweat equity you keep by doing it yourself.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {DIY_PROJECTS.map((p) => {
-              const proOnly = p.diy === 0;
-              const savings = proOnly ? 0 : p.pro - p.diy;
-              return (
-                <div key={p.project} className="rounded-lg border border-border bg-background p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-semibold text-foreground">{p.project}</p>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        proOnly ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
-                      }`}
-                    >
-                      {p.difficulty}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center gap-1" aria-label={`DIY friendliness ${p.score} of 10`}>
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <span
-                        key={i}
-                        className={`h-1.5 flex-1 rounded-full ${i < p.score ? "bg-primary" : "bg-secondary"}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <Wrench className="h-4 w-4" />
-                      DIY {proOnly ? "n/a" : formatPrice(p.diy)}
-                    </span>
-                    <span>Pro {formatPrice(p.pro)}</span>
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-foreground">
-                    {proOnly ? "Hire a licensed pro — not a safe DIY job." : `Sweat equity saved: ${formatPrice(savings)}`}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <AppreciationBanner zip={zip} />
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-foreground">
-            {results.length} {results.length === 1 ? "home" : "homes"} for sale
-            {zip && <span className="ml-2 text-sm font-normal text-muted-foreground">in zip {zip}</span>}
-          </h2>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            Sort by
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
-            >
-              <option value="newest">Newest</option>
-              <option value="price">Price (low to high)</option>
-              <option value="net">Net payment after house hacking</option>
-            </select>
-          </label>
-        </div>
-
-        {results.length === 0 ? (
-          <div className="mt-8">
-            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-              <p className="text-lg font-medium text-foreground">No homes match your filters</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Try widening the price range or clearing the zip code.
-              </p>
-              <button
-                onClick={clearFilters}
-                className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                Reset filters
-              </button>
-            </div>
-
-            {nearbyResults.length > 0 && (
-              <div className="mt-10">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Closest listings in nearby areas
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {nearbyNote || `Nothing in zip ${zip}, but these homes nearby match the rest of your filters.`}
-                </p>
-
-                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {nearbyResults.map((l) => (
-                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {nearbyResults.length === 0 && relaxedResults.length > 0 && (
-              <div className="mt-10">
-                <h3 className="text-lg font-semibold text-foreground">
-                  Close matches with relaxed criteria
-                </h3>
-                {relaxedNote && <p className="mt-1 text-sm text-muted-foreground">{relaxedNote}</p>}
-                <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {relaxedResults.map((l) => (
-                    <ListingCard key={l.id} l={l} mortgage={mortgage} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sortedResults.map((l) => (
-              <ListingCard key={l.id} l={l} mortgage={mortgage} />
-            ))}
           </div>
         )}
       </main>
