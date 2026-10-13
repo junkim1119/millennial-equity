@@ -228,7 +228,8 @@ function Index() {
   useEffect(() => {
     if (restored) saveBrowse({ zip, maxPrice, minBeds, minBaths, rate, downPct, termYears, sortBy });
   }, [restored, zip, maxPrice, minBeds, minBaths, rate, downPct, termYears, sortBy]);
-  const pitiExample = sortedResults[0] ?? LISTINGS[0];
+  const [rvbId, setRvbId] = useState<number | null>(null);
+  const pitiExample = (sortedResults[0] ?? LISTINGS[0])!;
 
   const area = useMemo(() => (zip === "" ? null : areaForZip(zip)), [zip]);
 
