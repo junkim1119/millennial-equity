@@ -130,7 +130,7 @@ function rentableSpaces(l: Listing) {
   return spaces;
 }
 
-export function hackScore(pct: number) {
+function hackScore(pct: number) {
   return Math.min(10, Math.max(1, Math.ceil(pct / 8)));
 }
 
@@ -967,8 +967,8 @@ function Index() {
               {rentalIncome > 0 ? (
                 <>
                   Estimated rental income:{" "}
-                  <span className="font-semibold">{formatPrice(rentalIncome)}/mo</span>. Every listing below now shows
-                  its net payment and how much of the mortgage is offset.
+                  <span className="font-semibold">{formatPrice(rentalIncome)}/mo</span>. This is your custom scenario; each card also shows its own
+                  House-Hack Score based on its rentable spaces and local rents.
                 </>
               ) : (
                 <span className="text-muted-foreground">Select a rentable space to see your reduced net payment.</span>
