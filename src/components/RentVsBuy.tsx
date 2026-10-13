@@ -38,7 +38,7 @@ export function RentVsBuy({ listing, mortgage }: { listing: Listing; mortgage: M
       `Total over ${years} yrs: rent ${formatPrice(r.rentTotal)} · buy ${formatPrice(r.buyTotal)} · buy + hack ${formatPrice(r.hackTotal)}`,
       `Equity built: ${formatPrice(r.equity)}`,
       `${position}.${hasHack ? ` With house hacking: ${best >= 0 ? `${formatPrice(best)} ahead` : `renting saves ${formatPrice(-best)}`}.` : ""}`,
-      "via MillenialHomeHunt",
+      "via MillennialEquity",
     ].join("\n");
     try {
       await navigator.clipboard.writeText(text);
