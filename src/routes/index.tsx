@@ -25,14 +25,16 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
             allowFullScreen
           />
         ) : (
-          <img
-            src={l.image}
-            alt={`Home at ${l.address}, ${l.city}`}
-            loading="lazy"
-            width={1024}
-            height={768}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+          <Link to="/listing/$id" params={{ id: String(l.id) }} aria-label={`View details for ${l.address}`}>
+            <img
+              src={l.image}
+              alt={`Home at ${l.address}, ${l.city}`}
+              loading="lazy"
+              width={1024}
+              height={768}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </Link>
         )}
         {l.tag && (
           <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
@@ -97,7 +99,13 @@ function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }
             {l.sqft.toLocaleString()} sqft
           </span>
         </div>
-        <p className="mt-3 text-sm font-medium text-foreground">{l.address}</p>
+        <Link
+          to="/listing/$id"
+          params={{ id: String(l.id) }}
+          className="mt-3 block text-sm font-medium text-foreground hover:text-primary hover:underline"
+        >
+          {l.address}
+        </Link>
         <p className="text-sm text-muted-foreground">
           {l.city} {l.zip}
         </p>
