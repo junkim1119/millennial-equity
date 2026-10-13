@@ -15,7 +15,8 @@ export function RentVsBuy({ listing, mortgage }: { listing: Listing; mortgage: M
 
   const r = rentVsBuy(listing, mortgage, { rent: Math.max(rent || 0, 0), rentIncrease, years, appreciation });
   const hasHack = r.rentIncome > 0;
-  const tenant = r.spaces.length === 1 && r.spaces[0].label.includes("bedroom") && !r.spaces[0].label.startsWith("2")
+  const only = r.spaces.length === 1 ? r.spaces[0] : undefined;
+  const tenant = only && only.label.startsWith("1 spare")
     ? "a roommate"
     : "house hacking";
   const diff = Math.round(rent - (hasHack ? r.hackMonthly : r.ownMonthly));
@@ -118,7 +119,7 @@ export function RentVsBuy({ listing, mortgage }: { listing: Listing; mortgage: M
             <Legend />
             <Line type="monotone" dataKey="rent" name="Rent" stroke="var(--muted-foreground)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="buy" name="Buy" stroke="var(--primary)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="hack" name="Buy + house hack" stroke="#22c55e" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="hack" name="Buy + house hack" stroke="var(--chart-2, var(--primary))" strokeDasharray="6 3" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
