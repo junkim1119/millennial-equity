@@ -611,6 +611,25 @@ function Index() {
           </div>
         </div>
 
+        {/* Rent vs. Buy */}
+        <div className="mt-6">
+          <label className="mb-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            Compare against
+            <select
+              value={rvbId ?? pitiExample.id}
+              onChange={(e) => setRvbId(Number(e.target.value))}
+              className="max-w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+            >
+              {LISTINGS.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.address}, {x.city} — {formatPrice(x.price)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <RentVsBuy listing={LISTINGS.find((x) => x.id === (rvbId ?? pitiExample.id)) ?? pitiExample} mortgage={mortgage} />
+        </div>
+
         {/* Renovation cost estimator */}
         <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">

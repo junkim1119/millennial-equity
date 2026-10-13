@@ -17,6 +17,7 @@ import {
   type Listing,
   type MortgageSettings,
 } from "@/lib/listings";
+import { RentVsBuy } from "@/components/RentVsBuy";
 
 export const Route = createFileRoute("/listing/$id")({
   loader: ({ params }) => {
@@ -110,6 +111,7 @@ function ListingDetail() {
     } catch { /* cancelled */ }
   };
   const [affordOpen, setAffordOpen] = useState(false);
+  const [tab, setTab] = useState<"overview" | "rvb">("overview");
 
   const tone = (score: number) =>
     score >= 7
@@ -182,7 +184,26 @@ function ListingDetail() {
         </div>
       </header>
 
-      <main className="mx-auto mt-6 grid max-w-6xl gap-6 px-4 lg:grid-cols-2">
+      <div role="tablist" className="mx-auto mt-6 flex max-w-6xl gap-1 px-4">
+        {([["overview", "Overview"], ["rvb", "Rent vs. Buy"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            type="button"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={`rounded-md px-4 py-2 text-sm font-medium ${tab === id ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-accent"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === "rvb" ? (
+        <div className="mx-auto mt-4 max-w-6xl px-4">
+          <RentVsBuy listing={l} mortgage={mortgage} />
+        </div>
+      ) : (
+      <main className="mx-auto mt-4 grid max-w-6xl gap-6 px-4 lg:grid-cols-2">
         {/* True monthly cost */}
         <section className="rounded-xl border border-border bg-card p-4 sm:p-6">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground"><Calculator className="h-4 w-4" /> True Monthly Cost</h2>
@@ -274,6 +295,7 @@ function ListingDetail() {
           </div>
         </section>
       </main>
+      )}
 
       {/* Sticky actions */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
