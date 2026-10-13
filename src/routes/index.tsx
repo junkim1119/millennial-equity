@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BedDouble, Bath, Ruler, MapPin, Search, SlidersHorizontal, X, Calculator, Home, Hammer, Wrench, PaintRoller, BadgeCheck, Map as MapIcon, ExternalLink, Wallet } from "lucide-react";
 import { loadBrowse, saveBrowse, AffordabilityPanel, DEFAULT_TAX_RATE, DIY_PROJECTS, HACK_EXTRAS, LISTINGS, Listing, MAPS_KEY, MortgageSettings, PRICE_MAX, PRICE_MIN, RENO_ROOMS, RENO_STYLES, RENTAL_SPACES, ROOM_RENT_BY_STATE, ROOM_RENT_BY_ZIP, RentalId, STATE_TAX_RATE, SortKey, Verdict, ZIP_AREAS, areaForZip, formatPrice, googleMapsLink, hackScore, houseHack, mapEmbedUrl, milesBetween, monthlyPayment, rentableSpaces, roomRent, streetViewEmbedUrl, trueCost, verdictFor } from "@/lib/listings";
 import { Link } from "@tanstack/react-router";
+import { RentVsBuy } from "@/components/RentVsBuy";
 
 function ListingCard({ l, mortgage }: { l: Listing; mortgage: MortgageSettings }) {
   const [media, setMedia] = useState<"photo" | "street">("photo");
@@ -228,7 +229,8 @@ function Index() {
   useEffect(() => {
     if (restored) saveBrowse({ zip, maxPrice, minBeds, minBaths, rate, downPct, termYears, sortBy });
   }, [restored, zip, maxPrice, minBeds, minBaths, rate, downPct, termYears, sortBy]);
-  const pitiExample = sortedResults[0] ?? LISTINGS[0];
+  const [rvbId, setRvbId] = useState<number | null>(null);
+  const pitiExample = (sortedResults[0] ?? LISTINGS[0])!;
 
   const area = useMemo(() => (zip === "" ? null : areaForZip(zip)), [zip]);
 
@@ -609,6 +611,25 @@ function Index() {
               )}
             </p>
           </div>
+        </div>
+
+        {/* Rent vs. Buy */}
+        <div className="mt-6">
+          <label className="mb-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            Compare against
+            <select
+              value={rvbId ?? pitiExample.id}
+              onChange={(e) => setRvbId(Number(e.target.value))}
+              className="max-w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground"
+            >
+              {LISTINGS.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.address}, {x.city} — {formatPrice(x.price)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <RentVsBuy listing={LISTINGS.find((x) => x.id === (rvbId ?? pitiExample.id)) ?? pitiExample} mortgage={mortgage} />
         </div>
 
         {/* Renovation cost estimator */}
