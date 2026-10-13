@@ -68,7 +68,7 @@ export function useHistory(z: string) {
   if (data) {
     const fips = apprCache?.zipCounty[z];
     const arr = data.zip[z] ?? (fips ? data.county[fips] : undefined);
-    if (arr) series = data.years.map((year, i) => ({ year, value: arr[i] }));
+    if (arr) series = data.years.map((year, i) => ({ year, value: arr[i] ?? null }));
   }
   const s: Status = status === "error" ? "error" : status === "ready" && aStatus !== "loading" ? "ready" : "loading";
   return { status: s, series };
